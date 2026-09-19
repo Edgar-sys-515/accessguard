@@ -66,9 +66,11 @@ function fixLinkText(link) {
 // Suporta OpenAI (GPT) ou Anthropic (Claude). A imagem vai pela URL pública da Shopify.
 function altPrompt(product) {
   return (
-    'Escreva um texto alternativo (alt text) curto e descritivo, com no máximo 125 caracteres, ' +
-    'para a imagem deste produto de uma loja online. Nome do produto: "' + product + '". ' +
-    'Descreva objetivamente o que aparece na imagem, pensando em quem não pode vê-la. ' +
+    'Você gera texto alternativo (alt text) para acessibilidade. OLHE a imagem e descreva ' +
+    'APENAS o que está visível nela (o objeto principal, cores, contexto), em no máximo 125 caracteres, ' +
+    'para uma pessoa que não pode vê-la. Baseie-se no que a imagem mostra, não em suposições. ' +
+    'O nome do produto é só um contexto e PODE NÃO corresponder à imagem — se divergir, descreva a IMAGEM, ignore o nome. ' +
+    'Nome do produto (contexto): "' + product + '". ' +
     'Não comece com "imagem de" ou "foto de". Responda somente com o texto alternativo, sem aspas.'
   );
 }
