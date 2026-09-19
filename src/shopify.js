@@ -29,6 +29,11 @@ const SCOPES = (process.env.SHOPIFY_SCOPES || 'read_products,read_themes,read_co
   .map((s) => s.trim())
   .filter(Boolean);
 
+// Atalho: token de um "app personalizado" criado dentro da loja (sem OAuth).
+// É o jeito mais simples de ler a própria loja — sem instalar, sem distribuição.
+const STATIC_TOKEN = process.env.SHOP_ADMIN_TOKEN || '';
+const STATIC_SHOP = (process.env.SHOP_DOMAIN || '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
+
 // Está tudo configurado para falar com a Shopify de verdade?
 const isConfigured = Boolean(API_KEY && API_SECRET && HOST);
 
@@ -94,8 +99,12 @@ async function clientCredentialsToken(shop) {
 // Descobre o access token da loja: primeiro o salvo (OAuth de lojista externo,
 // via App Store); senão tenta client_credentials (loja própria da organização).
 async function accessTokenFor(shop) {
+  // 1) Token do app personalizado (mais simples, pra loja própria)
+  if (STATIC_TOKEN && (!STATIC_SHOP || shop === STATIC_SHOP)) return STATIC_TOKEN;
+  // 2) Token salvo (OAuth de lojista externo, via App Store)
   const t = getToken(shop);
   if (t && t.accessToken) return t.accessToken;
+  // 3) client_credentials (loja própria da organização, se o app estiver instalado)
   return clientCredentialsToken(shop);
 }
 
