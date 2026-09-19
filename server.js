@@ -61,7 +61,7 @@ async function loadStoreData(shop) {
 }
 
 app.get('/health', (req, res) =>
-  res.json({ ok: true, app: 'AccessGuard', version: '0.3.5', mode: shopify.isConfigured ? 'live' : 'demo' })
+  res.json({ ok: true, app: 'AccessGuard', version: '0.3.6', mode: shopify.isConfigured ? 'live' : 'demo' })
 );
 
 // Varre a loja e devolve nota + problemas
@@ -103,6 +103,26 @@ app.post('/api/fix', async (req, res) => {
     // Nota depois: recalcula com os problemas corrigidos "aplicados".
     const after = 100; // v0.3: correções cobrem os achados varridos
     res.json({ before: scan.score, after, fixes });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Diagnóstico: mostra o que o app está lendo da loja (contagens + amostra).
+app.get('/api/debug', async (req, res) => {
+  try {
+    const store = await loadStoreData(req.query.shop);
+    const products = store.products || [];
+    res.json({
+      shop: store.shop,
+      lang: store.theme && store.theme.lang,
+      productsCount: products.length,
+      imagesTotal: products.reduce((n, p) => n + (p.images || []).length, 0),
+      imagesWithoutAlt: products.reduce((n, p) => n + (p.images || []).filter((i) => !i.alt).length, 0),
+      linksCount: (store.links || []).length,
+      formFieldsCount: (store.formFields || []).length,
+      sample: products.slice(0, 3),
+    });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

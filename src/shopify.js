@@ -142,22 +142,24 @@ async function callback(req, res) {
 // Produtos + imagens (com/sem alt) pela Admin API (GraphQL).
 async function fetchProducts(session) {
   const client = new shopify.clients.Graphql({ session });
+  // API nova da Shopify: as imagens do produto vêm por "media" (MediaImage).
   const query = `{
     products(first: 50) {
       edges { node {
         title
-        images(first: 20) { edges { node { url altText } } }
+        media(first: 20) { edges { node { ... on MediaImage { image { url altText } } } } }
       } }
     }
   }`;
   const resp = await client.request(query);
+  if (resp && resp.errors) console.error('GraphQL products errors:', JSON.stringify(resp.errors));
   const edges = (resp && resp.data && resp.data.products && resp.data.products.edges) || [];
   return edges.map((e) => ({
     title: e.node.title,
-    images: (e.node.images.edges || []).map((im) => ({
-      src: im.node.url,
-      alt: im.node.altText || '',
-    })),
+    images: ((e.node.media && e.node.media.edges) || [])
+      .map((m) => m.node && m.node.image)
+      .filter(Boolean)
+      .map((img) => ({ src: img.url, alt: img.altText || '' })),
   }));
 }
 
