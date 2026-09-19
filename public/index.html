@@ -61,8 +61,20 @@ __APP_BRIDGE__
   const q = shop ? ('?shop=' + encodeURIComponent(shop)) : '';
   const storeline = document.getElementById('storeline');
   if (storeline) storeline.textContent = (shop ? ('Store: ' + shop + ' · ') : '') + 'WCAG 2.1 AA / EAA';
+  // Anexa o "session token" do App Bridge (quando embutido) nas chamadas da API,
+  // para o servidor fazer o token exchange e ter o token do app público.
+  async function apiFetch(url, opts){
+    opts = opts || {};
+    try{
+      if (window.shopify && window.shopify.idToken){
+        const t = await window.shopify.idToken();
+        opts.headers = Object.assign({}, opts.headers || {}, { Authorization: 'Bearer ' + t });
+      }
+    }catch(e){}
+    return fetch(url, opts);
+  }
   async function scan(){
-    const r = await fetch('/api/scan' + q); const d = await r.json();
+    const r = await apiFetch('/api/scan' + q); const d = await r.json();
     document.getElementById('score').textContent = d.score;
     document.getElementById('c').textContent = d.counts.critical;
     document.getElementById('s').textContent = d.counts.serious;
@@ -83,7 +95,7 @@ __APP_BRIDGE__
     });
   }
   async function fixAll(){
-    const r = await fetch('/api/fix' + q,{method:'POST'}); const d = await r.json();
+    const r = await apiFetch('/api/fix' + q,{method:'POST'}); const d = await r.json();
     document.getElementById('score').textContent = d.after;
     document.getElementById('c').textContent='0';document.getElementById('s').textContent='0';document.getElementById('m').textContent='0';
     const b=document.getElementById('banner'); b.className='banner ok'; b.innerHTML='<span>✅</span><b>Your store is compliant. AccessGuard keeps monitoring changes.</b>';
@@ -95,7 +107,7 @@ __APP_BRIDGE__
   async function checkBilling(){
     if(!shop) return; // sem loja (fora do admin), não mostra cobrança
     try{
-      const r = await fetch('/api/billing/status' + q); const d = await r.json();
+      const r = await apiFetch('/api/billing/status' + q); const d = await r.json();
       const el = document.getElementById('billing');
       if(d && d.active){ el.style.display='none'; return; }
       el.style.display='block';
@@ -107,7 +119,7 @@ __APP_BRIDGE__
   async function subscribe(btn){
     if(btn){ btn.disabled=true; btn.textContent='Abrindo…'; }
     try{
-      const r = await fetch('/api/billing/subscribe' + q); const d = await r.json();
+      const r = await apiFetch('/api/billing/subscribe' + q); const d = await r.json();
       if(d && d.confirmationUrl){ (window.top||window).location.href = d.confirmationUrl; }
       else { alert('Não foi possível iniciar a assinatura: ' + (d && d.error ? d.error : 'erro')); if(btn){btn.disabled=false;btn.textContent='Começar teste grátis';} }
     }catch(e){ alert('Erro: ' + e.message); if(btn){btn.disabled=false;btn.textContent='Começar teste grátis';} }
