@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AccessGuard</title>
+<style>
+  :root{--ink:#1a1c20;--soft:#5c6470;--muted:#8a909b;--line:#e3e6ea;--brand:#1f6f5c;--brand-bg:#1f6f5c14;
+    --crit:#c0392b;--ser:#b9770e;--mod:#2c6cb0;--good:#1e8e5a;--bg:#f6f6f7;--card:#fff}
+  *{box-sizing:border-box}body{margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  .top{background:#fff;border-bottom:1px solid var(--line);padding:12px 18px;display:flex;align-items:center;gap:10px}
+  .logo{width:26px;height:26px;border-radius:7px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800}
+  .wrap{max-width:760px;margin:0 auto;padding:22px 18px 60px}
+  h1{font-size:22px;margin:0 0 4px}.lead{color:var(--soft);font-size:14px;margin:0 0 18px}
+  .banner{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:18px}
+  .banner.risk{background:#c0392b10}.banner.ok{background:#1e8e5a12}
+  .row{display:flex;gap:16px;align-items:stretch;margin-bottom:18px;flex-wrap:wrap}
+  .score{flex:0 0 auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 26px;text-align:center;min-width:150px}
+  .score .n{font-size:40px;font-weight:800;line-height:1}.score .d{color:var(--muted);font-size:12px}
+  .sum{flex:1;min-width:200px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;justify-content:center;gap:12px}
+  .counts{display:flex;gap:18px}.counts b{font-size:22px;display:block}.counts span{font-size:12px;color:var(--soft)}
+  button{font:inherit;font-weight:600;border:none;border-radius:9px;cursor:pointer;padding:11px 16px}
+  .primary{background:var(--brand);color:#fff}.primary:hover{filter:brightness(1.07)}
+  .issue{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:9px;display:flex;gap:12px;align-items:center}
+  .sev{width:9px;height:9px;border-radius:50%;flex:none}.c{background:var(--crit)}.s{background:var(--ser)}.m{background:var(--mod)}
+  .issue .t{flex:1;font-size:14.5px;font-weight:600}
+  .tag{font-size:11px;background:var(--brand-bg);color:var(--brand);padding:3px 8px;border-radius:6px;white-space:nowrap}
+  .sec{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin:20px 0 10px}
+  pre{white-space:pre-wrap;font-size:13px;color:var(--soft)}
+</style>
+</head>
+<body>
+  <div class="top"><div class="logo">♿</div><b>AccessGuard</b></div>
+  <div class="wrap">
+    <h1>Accessibility Dashboard</h1>
+    <p class="lead">Store: accessguard-dev.myshopify.com · WCAG 2.1 AA / EAA</p>
+    <div id="banner" class="banner risk"><span>⚠️</span><b>Checking your store…</b></div>
+    <div class="row">
+      <div class="score"><div class="n" id="score">–</div><div class="d">/ 100</div></div>
+      <div class="sum">
+        <div class="counts">
+          <div><b id="c" style="color:var(--crit)">0</b><span>Critical</span></div>
+          <div><b id="s" style="color:var(--ser)">0</b><span>Serious</span></div>
+          <div><b id="m" style="color:var(--mod)">0</b><span>Moderate</span></div>
+        </div>
+        <div><button class="primary" onclick="fixAll()">✨ Fix all with AI</button></div>
+      </div>
+    </div>
+    <div class="sec">Issues</div>
+    <div id="issues"></div>
+    <div id="fixout"></div>
+  </div>
+<script>
+  const sev = { critical:'c', serious:'s', moderate:'m' };
+  async function scan(){
+    const r = await fetch('/api/scan'); const d = await r.json();
+    document.getElementById('score').textContent = d.score;
+    document.getElementById('c').textContent = d.counts.critical;
+    document.getElementById('s').textContent = d.counts.serious;
+    document.getElementById('m').textContent = d.counts.moderate;
+    const b = document.getElementById('banner');
+    b.innerHTML = '<span>⚠️</span><b>Your store is at risk — fix the issues below to comply with the EAA.</b>';
+    const el = document.getElementById('issues'); el.innerHTML='';
+    d.issues.forEach(function(i){
+      const div=document.createElement('div'); div.className='issue';
+      div.innerHTML='<span class="sev '+sev[i.severity]+'"></span><span class="t">'+i.title+'</span>'+(i.autofix?'<span class="tag">AI-fixable</span>':'');
+      el.appendChild(div);
+    });
+  }
+  async function fixAll(){
+    const r = await fetch('/api/fix',{method:'POST'}); const d = await r.json();
+    document.getElementById('score').textContent = d.after;
+    document.getElementById('c').textContent='0';document.getElementById('s').textContent='0';document.getElementById('m').textContent='0';
+    const b=document.getElementById('banner'); b.className='banner ok'; b.innerHTML='<span>✅</span><b>Your store is compliant. AccessGuard keeps monitoring changes.</b>';
+    document.getElementById('issues').innerHTML='';
+    document.getElementById('fixout').innerHTML='<div class="sec">Applied fixes</div><pre>'+JSON.stringify(d.fixes,null,2)+'</pre>';
+  }
+  scan();
+</script>
+</body>
+</html>
