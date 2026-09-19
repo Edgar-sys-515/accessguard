@@ -284,6 +284,62 @@ async function loadRealStore(shop) {
   };
 }
 
+// ---------- Cobrança (Shopify Billing) ----------
+// IMPORTANTE: usa o token do app PÚBLICO (do token exchange/OAuth). O token do
+// app personalizado NÃO pode cobrar — por isso aqui usamos getToken(shop).
+function publicSession(shop) {
+  const t = getToken(shop);
+  if (!t || !t.accessToken) return null;
+  return new Session({
+    id: 'offline_' + shop, shop, state: 'offline', isOnline: false,
+    accessToken: t.accessToken, scope: t.scope,
+  });
+}
+
+// Já existe uma assinatura ativa nesta loja?
+async function getActiveSubscription(shop) {
+  const session = publicSession(shop);
+  if (!session) return null;
+  const client = new shopify.clients.Graphql({ session });
+  const q = `{ currentAppInstallation { activeSubscriptions { id name status } } }`;
+  const resp = await client.request(q);
+  const subs =
+    (resp && resp.data && resp.data.currentAppInstallation && resp.data.currentAppInstallation.activeSubscriptions) || [];
+  return subs.find((s) => s.status === 'ACTIVE') || subs[0] || null;
+}
+
+// Cria a assinatura e devolve a URL de aprovação (confirmationUrl).
+async function createSubscription(shop, returnUrl, plan) {
+  const session = publicSession(shop);
+  if (!session) throw new Error('Sem token do app público nesta loja — abra o app pelo admin (instale) primeiro.');
+  const client = new shopify.clients.Graphql({ session });
+  const mutation = `mutation ($name: String!, $returnUrl: URL!, $test: Boolean, $trialDays: Int, $amount: Decimal!, $currency: CurrencyCode!) {
+    appSubscriptionCreate(
+      name: $name,
+      returnUrl: $returnUrl,
+      test: $test,
+      trialDays: $trialDays,
+      lineItems: [{ plan: { appRecurringPricingDetails: { price: { amount: $amount, currencyCode: $currency }, interval: EVERY_30_DAYS } } }]
+    ) {
+      confirmationUrl
+      appSubscription { id status }
+      userErrors { field message }
+    }
+  }`;
+  const resp = await client.request(mutation, {
+    variables: {
+      name: plan.name, returnUrl, test: plan.test, trialDays: plan.trialDays,
+      amount: String(plan.amount), currency: plan.currency,
+    },
+  });
+  const data = resp && resp.data && resp.data.appSubscriptionCreate;
+  if (data && data.userErrors && data.userErrors.length) {
+    throw new Error(data.userErrors.map((e) => e.message).join('; '));
+  }
+  if (!data || !data.confirmationUrl) throw new Error('Sem confirmationUrl na resposta da Shopify.');
+  return data.confirmationUrl;
+}
+
 module.exports = {
   isConfigured,
   HOST,
@@ -295,5 +351,7 @@ module.exports = {
   knownShops,
   loadRealStore,
   writeAltFixes,
+  getActiveSubscription,
+  createSubscription,
   API_KEY,
 };

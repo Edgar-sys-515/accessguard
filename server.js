@@ -95,7 +95,7 @@ async function loadStoreData(shop) {
 }
 
 app.get('/health', (req, res) =>
-  res.json({ ok: true, app: 'AccessGuard', version: '0.5.0', mode: shopify.isConfigured ? 'live' : 'demo' })
+  res.json({ ok: true, app: 'AccessGuard', version: '0.6.0', mode: shopify.isConfigured ? 'live' : 'demo' })
 );
 
 // Varre a loja e devolve nota + problemas
@@ -174,6 +174,40 @@ app.get('/api/debug', async (req, res) => {
       formFieldsCount: (store.formFields || []).length,
       sample: products.slice(0, 3),
     });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ---------- Cobrança (Shopify Billing) ----------
+const PLAN = {
+  name: process.env.PLAN_NAME || 'AccessGuard Pro',
+  amount: process.env.PLAN_PRICE || '39.00',
+  currency: process.env.PLAN_CURRENCY || 'USD',
+  trialDays: parseInt(process.env.PLAN_TRIAL_DAYS || '7', 10),
+  test: String(process.env.BILLING_TEST || 'true') === 'true', // true = cobrança de teste
+};
+
+// A loja já tem assinatura ativa?
+app.get('/api/billing/status', async (req, res) => {
+  try {
+    const shop = await resolveShop(req);
+    if (!shop) return res.json({ active: false, reason: 'no-shop' });
+    const sub = await shopify.getActiveSubscription(shop);
+    res.json({ active: !!(sub && sub.status === 'ACTIVE'), plan: PLAN.name, price: PLAN.amount, trialDays: PLAN.trialDays });
+  } catch (e) {
+    res.json({ active: false, error: e.message });
+  }
+});
+
+// Cria a assinatura e devolve a URL de aprovação da Shopify.
+app.get('/api/billing/subscribe', async (req, res) => {
+  try {
+    const shop = await resolveShop(req);
+    if (!shop) return res.status(400).json({ error: 'sem loja' });
+    const returnUrl = 'https://' + shopify.HOST + '/?shop=' + encodeURIComponent(shop);
+    const confirmationUrl = await shopify.createSubscription(shop, returnUrl, PLAN);
+    res.json({ confirmationUrl });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

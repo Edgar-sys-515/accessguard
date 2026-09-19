@@ -15,6 +15,8 @@ __APP_BRIDGE__
   h1{font-size:22px;margin:0 0 4px}.lead{color:var(--soft);font-size:14px;margin:0 0 18px}
   .banner{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:18px}
   .banner.risk{background:#c0392b10}.banner.ok{background:#1e8e5a12}
+  .bill{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--brand);background:var(--brand-bg);border-radius:12px;padding:14px 16px;margin-bottom:18px}
+  .bill b{font-size:15px}.billsub{color:var(--soft);font-size:13px;margin-top:2px}
   .row{display:flex;gap:16px;align-items:stretch;margin-bottom:18px;flex-wrap:wrap}
   .score{flex:0 0 auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 26px;text-align:center;min-width:150px}
   .score .n{font-size:40px;font-weight:800;line-height:1}.score .d{color:var(--muted);font-size:12px}
@@ -35,6 +37,7 @@ __APP_BRIDGE__
   <div class="wrap">
     <h1>Accessibility Dashboard</h1>
     <p class="lead" id="storeline">WCAG 2.1 AA / EAA</p>
+    <div id="billing" style="display:none"></div>
     <div id="banner" class="banner risk"><span>⚠️</span><b>Checking your store…</b></div>
     <div class="row">
       <div class="score"><div class="n" id="score">–</div><div class="d">/ 100</div></div>
@@ -88,7 +91,29 @@ __APP_BRIDGE__
     var wrote = d.written ? ('<p style="font-weight:600;color:var(--good)">✅ Gravado na loja: '+d.written.applied+' imagem(ns) com texto alternativo.'+((d.written.errors&&d.written.errors.length)?(' <span style="color:var(--crit)">Erros: '+d.written.errors.join('; ')+'</span>'):'')+'</p>') : '';
     document.getElementById('fixout').innerHTML='<div class="sec">Applied fixes</div>'+wrote+'<pre>'+JSON.stringify(d.fixes,null,2)+'</pre>';
   }
+  // ----- Cobrança (Shopify Billing) -----
+  async function checkBilling(){
+    if(!shop) return; // sem loja (fora do admin), não mostra cobrança
+    try{
+      const r = await fetch('/api/billing/status' + q); const d = await r.json();
+      const el = document.getElementById('billing');
+      if(d && d.active){ el.style.display='none'; return; }
+      el.style.display='block';
+      el.innerHTML = '<div class="bill"><div><b>✨ Ative o AccessGuard</b>'
+        + '<div class="billsub">' + (d.trialDays||7) + ' dias grátis, depois $' + (d.price||'39') + '/mês · cobrado pela Shopify</div></div>'
+        + '<button class="primary" onclick="subscribe(this)">Começar teste grátis</button></div>';
+    }catch(e){/* silencioso */}
+  }
+  async function subscribe(btn){
+    if(btn){ btn.disabled=true; btn.textContent='Abrindo…'; }
+    try{
+      const r = await fetch('/api/billing/subscribe' + q); const d = await r.json();
+      if(d && d.confirmationUrl){ (window.top||window).location.href = d.confirmationUrl; }
+      else { alert('Não foi possível iniciar a assinatura: ' + (d && d.error ? d.error : 'erro')); if(btn){btn.disabled=false;btn.textContent='Começar teste grátis';} }
+    }catch(e){ alert('Erro: ' + e.message); if(btn){btn.disabled=false;btn.textContent='Começar teste grátis';} }
+  }
   scan();
+  checkBilling();
 </script>
 </body>
 </html>
