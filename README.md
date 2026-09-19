@@ -11,7 +11,18 @@ de acessibilidade (WCAG 2.1 AA / European Accessibility Act) e **corrige** com I
   links com texto vago, página sem idioma declarado. Gera uma **nota de 0 a 100**.
 - ✅ **Corretor** (`src/fixer.js`) — calcula a cor que passa no contraste (matemática pura),
   reescreve links, define o idioma, e gera texto alternativo (IA de visão ligada no deploy).
-- ⬜ Empacotar como app Shopify (OAuth + painel embutido) e hospedar.
+- ✅ **Camada Shopify** (`src/shopify.js`) — instala o app na loja (OAuth), guarda o token
+  e lê a loja REAL (produtos/imagens pela Admin API + sinais da vitrine).
+- ✅ **Empacotamento** — `Dockerfile` + `docker-compose.yml` para rodar como contêiner.
+- ⬜ Deploy na VPS com HTTPS e publicação na Shopify App Store — veja **DEPLOY.md**.
+
+## Como rodar (servidor)
+```bash
+npm install
+npm start        # sem chaves da Shopify: modo demonstração (loja de exemplo)
+```
+Com as variáveis da Shopify preenchidas (`.env`, veja `.env.example`), o app
+entra em **modo live**: instala em lojas reais e varre os dados de verdade.
 
 ## Rodar as demos
 ```bash

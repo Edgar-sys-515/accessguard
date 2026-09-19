@@ -1,14 +1,18 @@
 {
   "name": "accessguard",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "AccessGuard — AI accessibility app for Shopify stores (EAA / WCAG 2.1 AA).",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node server.js",
     "scan": "node scan-demo.js",
     "fix": "node fix-demo.js"
   },
   "dependencies": {
+    "@shopify/shopify-api": "^11.6.1",
     "express": "^4.22.3"
   },
   "license": "UNLICENSED"

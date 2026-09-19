@@ -1,0 +1,36 @@
+# AccessGuard — sobe o app como um contêiner ao lado dos seus outros apps.
+#
+# Como usar na VPS:
+#   1) tenha o arquivo .env preenchido (veja .env.example)
+#   2) docker compose up -d --build
+#
+# O app fica ouvindo SÓ no localhost da VPS (127.0.0.1:3011). Quem expõe ele
+# para a internet com HTTPS é o seu reverse proxy (veja o DEPLOY.md).
+
+services:
+  accessguard:
+    build: .
+    container_name: accessguard
+    restart: unless-stopped
+    env_file: .env
+    # porta interna 3000 -> 3011 só no localhost da VPS (o proxy encaminha pra cá)
+    ports:
+      - "127.0.0.1:3011:3000"
+    volumes:
+      # guarda os tokens das lojas instaladas fora do contêiner (não se perde no rebuild)
+      - ./data:/app/data
+
+# --- Se você usa Traefik como proxy, em vez de "ports" acima use labels ---
+#   (apague o bloco ports e descomente abaixo, ajustando o nome da rede)
+#
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.http.routers.accessguard.rule=Host(`accessguard.discar.cloud`)"
+#      - "traefik.http.routers.accessguard.entrypoints=websecure"
+#      - "traefik.http.routers.accessguard.tls.certresolver=letsencrypt"
+#      - "traefik.http.services.accessguard.loadbalancer.server.port=3000"
+#    networks:
+#      - proxy
+# networks:
+#   proxy:
+#     external: true
