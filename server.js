@@ -67,6 +67,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Descobre a loja desta requisição. No app embutido, vem pelo "session token"
 // (App Bridge) no cabeçalho Authorization → token exchange. Fora do admin, ?shop=.
+// Extrai o "session token" (do App Bridge) do cabeçalho Authorization.
+function bearerToken(req) {
+  const m = (req.headers.authorization || '').match(/^Bearer (.+)$/i);
+  return m ? m[1] : null;
+}
+
 async function resolveShop(req) {
   const auth = req.headers.authorization || '';
   const m = auth.match(/^Bearer (.+)$/i);
@@ -95,7 +101,7 @@ async function loadStoreData(shop) {
 }
 
 app.get('/health', (req, res) =>
-  res.json({ ok: true, app: 'AccessGuard', version: '0.6.2', mode: shopify.isConfigured ? 'live' : 'demo' })
+  res.json({ ok: true, app: 'AccessGuard', version: '0.6.3', mode: shopify.isConfigured ? 'live' : 'demo' })
 );
 
 // Varre a loja e devolve nota + problemas
@@ -193,7 +199,7 @@ app.get('/api/billing/status', async (req, res) => {
   try {
     const shop = await resolveShop(req);
     if (!shop) return res.json({ active: false, reason: 'no-shop' });
-    const sub = await shopify.getActiveSubscription(shop);
+    const sub = await shopify.getActiveSubscription(shop, bearerToken(req));
     res.json({ active: !!(sub && sub.status === 'ACTIVE'), plan: PLAN.name, price: PLAN.amount, trialDays: PLAN.trialDays });
   } catch (e) {
     res.json({ active: false, error: e.message });
@@ -206,7 +212,7 @@ app.get('/api/billing/subscribe', async (req, res) => {
     const shop = await resolveShop(req);
     if (!shop) return res.status(400).json({ error: 'sem loja' });
     const returnUrl = 'https://' + shopify.HOST + '/?shop=' + encodeURIComponent(shop);
-    const confirmationUrl = await shopify.createSubscription(shop, returnUrl, PLAN);
+    const confirmationUrl = await shopify.createSubscription(shop, returnUrl, PLAN, bearerToken(req));
     res.json({ confirmationUrl });
   } catch (e) {
     res.status(500).json({ error: e.message });

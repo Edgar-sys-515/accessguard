@@ -306,9 +306,26 @@ function publicSession(shop) {
   });
 }
 
+// Sessão para cobrança. Faz um token exchange ONLINE (fresco) — o token offline
+// antigo dá 403 em apps públicos desde abr/2026. Se não vier o session token,
+// cai no token salvo.
+async function billingSession(shop, sessionToken) {
+  if (sessionToken) {
+    try {
+      const { session } = await shopify.auth.tokenExchange({
+        shop, sessionToken, requestedTokenType: RequestedTokenType.OnlineAccessToken,
+      });
+      if (session && session.accessToken) return session;
+    } catch (e) {
+      console.error('online token exchange falhou:', e.message);
+    }
+  }
+  return publicSession(shop);
+}
+
 // Já existe uma assinatura ativa nesta loja?
-async function getActiveSubscription(shop) {
-  const session = publicSession(shop);
+async function getActiveSubscription(shop, sessionToken) {
+  const session = await billingSession(shop, sessionToken);
   if (!session) return null;
   const client = new shopify.clients.Graphql({ session });
   const q = `{ currentAppInstallation { activeSubscriptions { id name status } } }`;
@@ -319,8 +336,8 @@ async function getActiveSubscription(shop) {
 }
 
 // Cria a assinatura e devolve a URL de aprovação (confirmationUrl).
-async function createSubscription(shop, returnUrl, plan) {
-  const session = publicSession(shop);
+async function createSubscription(shop, returnUrl, plan, sessionToken) {
+  const session = await billingSession(shop, sessionToken);
   if (!session) throw new Error('Sem token do app público nesta loja — abra o app pelo admin (instale) primeiro.');
   const client = new shopify.clients.Graphql({ session });
   const mutation = `mutation ($name: String!, $returnUrl: URL!, $test: Boolean, $trialDays: Int, $amount: Decimal!, $currency: CurrencyCode!) {
