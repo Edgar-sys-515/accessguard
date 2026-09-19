@@ -64,7 +64,13 @@
     document.getElementById('s').textContent = d.counts.serious;
     document.getElementById('m').textContent = d.counts.moderate;
     const b = document.getElementById('banner');
-    b.innerHTML = '<span>⚠️</span><b>Your store is at risk — fix the issues below to comply with the EAA.</b>';
+    if (!d.issues || d.issues.length === 0) {
+      b.className = 'banner ok';
+      b.innerHTML = '<span>✅</span><b>Your store is compliant. AccessGuard keeps monitoring changes.</b>';
+    } else {
+      b.className = 'banner risk';
+      b.innerHTML = '<span>⚠️</span><b>Your store is at risk — fix the issues below to comply with the EAA.</b>';
+    }
     const el = document.getElementById('issues'); el.innerHTML='';
     d.issues.forEach(function(i){
       const div=document.createElement('div'); div.className='issue';
