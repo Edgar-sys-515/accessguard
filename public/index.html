@@ -33,7 +33,7 @@
   <div class="top"><div class="logo">♿</div><b>AccessGuard</b></div>
   <div class="wrap">
     <h1>Accessibility Dashboard</h1>
-    <p class="lead">Store: accessguard-dev.myshopify.com · WCAG 2.1 AA / EAA</p>
+    <p class="lead" id="storeline">WCAG 2.1 AA / EAA</p>
     <div id="banner" class="banner risk"><span>⚠️</span><b>Checking your store…</b></div>
     <div class="row">
       <div class="score"><div class="n" id="score">–</div><div class="d">/ 100</div></div>
@@ -52,8 +52,13 @@
   </div>
 <script>
   const sev = { critical:'c', serious:'s', moderate:'m' };
+  // Pega a loja da URL da página e repassa para as chamadas da API.
+  const shop = new URLSearchParams(location.search).get('shop');
+  const q = shop ? ('?shop=' + encodeURIComponent(shop)) : '';
+  const storeline = document.getElementById('storeline');
+  if (storeline) storeline.textContent = (shop ? ('Store: ' + shop + ' · ') : '') + 'WCAG 2.1 AA / EAA';
   async function scan(){
-    const r = await fetch('/api/scan'); const d = await r.json();
+    const r = await fetch('/api/scan' + q); const d = await r.json();
     document.getElementById('score').textContent = d.score;
     document.getElementById('c').textContent = d.counts.critical;
     document.getElementById('s').textContent = d.counts.serious;
@@ -68,7 +73,7 @@
     });
   }
   async function fixAll(){
-    const r = await fetch('/api/fix',{method:'POST'}); const d = await r.json();
+    const r = await fetch('/api/fix' + q,{method:'POST'}); const d = await r.json();
     document.getElementById('score').textContent = d.after;
     document.getElementById('c').textContent='0';document.getElementById('s').textContent='0';document.getElementById('m').textContent='0';
     const b=document.getElementById('banner'); b.className='banner ok'; b.innerHTML='<span>✅</span><b>Your store is compliant. AccessGuard keeps monitoring changes.</b>';
