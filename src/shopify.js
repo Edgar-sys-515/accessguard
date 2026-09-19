@@ -14,7 +14,7 @@
  * Assim dá para abrir o painel e testar sem loja conectada.
  */
 require('@shopify/shopify-api/adapters/node');
-const { shopifyApi, LATEST_API_VERSION, Session } = require('@shopify/shopify-api');
+const { shopifyApi, LATEST_API_VERSION, Session, RequestedTokenType } = require('@shopify/shopify-api');
 const fs = require('fs');
 const path = require('path');
 
@@ -45,7 +45,7 @@ if (isConfigured) {
     scopes: SCOPES,
     hostName: HOST,
     apiVersion: LATEST_API_VERSION,
-    isEmbeddedApp: false, // v0.3: app clássico (não-embutido). Embutido + App Bridge vem depois.
+    isEmbeddedApp: true, // app embutido no admin (App Bridge + token exchange)
   });
 }
 
@@ -136,6 +136,23 @@ async function callback(req, res) {
   const { session } = await shopify.auth.callback({ rawRequest: req, rawResponse: res });
   saveToken(session.shop, session.accessToken, (session.scope || SCOPES.join(',')));
   return session;
+}
+
+// ---------- Token exchange (app embutido) ----------
+// Troca o "session token" do App Bridge por um access token da loja, guarda e
+// devolve o domínio da loja. É o jeito moderno, sem redirect de OAuth.
+async function ensureTokenFromSession(sessionToken) {
+  const payload = await shopify.session.decodeSessionToken(sessionToken); // valida a assinatura
+  const shop = String(payload.dest || '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  if (!shop) throw new Error('session token sem loja (dest)');
+  if (getToken(shop)) return shop; // já temos token salvo desta loja
+  const { session } = await shopify.auth.tokenExchange({
+    shop,
+    sessionToken,
+    requestedTokenType: RequestedTokenType.OfflineAccessToken,
+  });
+  saveToken(shop, session.accessToken, session.scope || SCOPES.join(','));
+  return shop;
 }
 
 // ---------- Leitura da loja real ----------
@@ -273,8 +290,10 @@ module.exports = {
   SCOPES,
   begin,
   callback,
+  ensureTokenFromSession,
   getToken,
   knownShops,
   loadRealStore,
   writeAltFixes,
+  API_KEY,
 };

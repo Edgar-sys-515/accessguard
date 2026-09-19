@@ -11,6 +11,7 @@
  */
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const { scanStore } = require('./src/scanner');
 const { fixContrast, fixLang, fixLinkText, generateAltText } = require('./src/fixer');
 const sampleStore = require('./src/sampleStore');
@@ -43,11 +44,44 @@ if (shopify.isConfigured) {
   });
 }
 
-// Arquivos do painel
+// Página inicial: injeta o App Bridge quando a Shopify abre o app embutido
+// (vem com ?host=). Fora do admin (teste direto), não injeta — nada quebra.
+app.get('/', (req, res) => {
+  try {
+    // Permite que a Shopify carregue o app no iframe do admin (necessário p/ embutido).
+    const shop = req.query.shop;
+    if (shop) res.set('Content-Security-Policy', 'frame-ancestors https://' + shop + ' https://admin.shopify.com;');
+    let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+    const bridge = req.query.host && shopify.isConfigured
+      ? '<script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" data-api-key="' + shopify.API_KEY + '"></script>'
+      : '';
+    html = html.replace('__APP_BRIDGE__', bridge);
+    res.set('Content-Type', 'text/html; charset=utf-8').send(html);
+  } catch (e) {
+    res.status(500).send('Erro ao carregar o painel: ' + e.message);
+  }
+});
+
+// Arquivos do painel (demais assets)
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Descobre a loja desta requisição. No app embutido, vem pelo "session token"
+// (App Bridge) no cabeçalho Authorization → token exchange. Fora do admin, ?shop=.
+async function resolveShop(req) {
+  const auth = req.headers.authorization || '';
+  const m = auth.match(/^Bearer (.+)$/i);
+  if (m && shopify.isConfigured) {
+    try {
+      return await shopify.ensureTokenFromSession(m[1]);
+    } catch (e) {
+      console.error('token exchange falhou:', e.message);
+    }
+  }
+  return req.query.shop || (req.body && req.body.shop) || null;
+}
+
 // Decide de onde vêm os dados da loja para esta requisição.
-// Com um shop no endereço, tenta a loja REAL (token salvo OU client_credentials);
+// Com um shop, tenta a loja REAL (token salvo / exchange / client_credentials);
 // se falhar, cai na loja de exemplo para o painel ainda abrir.
 async function loadStoreData(shop) {
   if (shopify.isConfigured && shop) {
@@ -61,13 +95,14 @@ async function loadStoreData(shop) {
 }
 
 app.get('/health', (req, res) =>
-  res.json({ ok: true, app: 'AccessGuard', version: '0.4.1', mode: shopify.isConfigured ? 'live' : 'demo' })
+  res.json({ ok: true, app: 'AccessGuard', version: '0.5.0', mode: shopify.isConfigured ? 'live' : 'demo' })
 );
 
 // Varre a loja e devolve nota + problemas
 app.get('/api/scan', async (req, res) => {
   try {
-    const store = await loadStoreData(req.query.shop);
+    const shop = await resolveShop(req);
+    const store = await loadStoreData(shop);
     res.json(scanStore(store));
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -77,7 +112,7 @@ app.get('/api/scan', async (req, res) => {
 // Aplica as correções e devolve o antes/depois
 app.post('/api/fix', async (req, res) => {
   try {
-    const shop = req.query.shop || (req.body && req.body.shop);
+    const shop = await resolveShop(req);
     const store = await loadStoreData(shop);
     const scan = scanStore(store);
     const aiKey = process.env.AI_API_KEY || null;
@@ -126,7 +161,8 @@ app.post('/api/fix', async (req, res) => {
 // Diagnóstico: mostra o que o app está lendo da loja (contagens + amostra).
 app.get('/api/debug', async (req, res) => {
   try {
-    const store = await loadStoreData(req.query.shop);
+    const shop = await resolveShop(req);
+    const store = await loadStoreData(shop);
     const products = store.products || [];
     res.json({
       shop: store.shop,
