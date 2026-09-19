@@ -155,12 +155,44 @@ async function fetchProducts(session) {
   if (resp && resp.errors) console.error('GraphQL products errors:', JSON.stringify(resp.errors));
   const edges = (resp && resp.data && resp.data.products && resp.data.products.edges) || [];
   return edges.map((e) => ({
+    id: e.node.id,
     title: e.node.title,
     images: ((e.node.media && e.node.media.edges) || [])
-      .map((m) => m.node && m.node.image)
-      .filter(Boolean)
-      .map((img) => ({ src: img.url, alt: img.altText || '' })),
+      .map((m) => m.node)
+      .filter((n) => n && n.image)
+      .map((n) => ({ mediaId: n.id, src: n.image.url, alt: n.image.altText || '' })),
   }));
+}
+
+// GRAVA o texto alternativo de volta na loja (a correção "de verdade").
+// Precisa do escopo write_products no app.
+async function writeAltFixes(shop, items) {
+  const list = (items || []).filter((it) => it && it.productId && it.mediaId);
+  if (!list.length) return { applied: 0, errors: [] };
+  const session = await sessionFor(shop);
+  const client = new shopify.clients.Graphql({ session });
+  const mutation = `mutation($productId: ID!, $media: [UpdateMediaInput!]!) {
+    productUpdateMedia(productId: $productId, media: $media) {
+      media { ... on MediaImage { id alt } }
+      mediaUserErrors { field message }
+    }
+  }`;
+  let applied = 0;
+  const errors = [];
+  for (const it of list) {
+    try {
+      const resp = await client.request(mutation, {
+        variables: { productId: it.productId, media: [{ id: it.mediaId, alt: it.alt }] },
+      });
+      const ue =
+        (resp && resp.data && resp.data.productUpdateMedia && resp.data.productUpdateMedia.mediaUserErrors) || [];
+      if (ue.length) errors.push(...ue.map((e) => e.message));
+      else applied++;
+    } catch (e) {
+      errors.push(e.message);
+    }
+  }
+  return { applied, errors };
 }
 
 // Página inicial da vitrine: idioma declarado, links vagos, campos sem rótulo.
@@ -243,4 +275,5 @@ module.exports = {
   getToken,
   knownShops,
   loadRealStore,
+  writeAltFixes,
 };

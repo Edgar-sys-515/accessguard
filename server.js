@@ -61,7 +61,7 @@ async function loadStoreData(shop) {
 }
 
 app.get('/health', (req, res) =>
-  res.json({ ok: true, app: 'AccessGuard', version: '0.3.6', mode: shopify.isConfigured ? 'live' : 'demo' })
+  res.json({ ok: true, app: 'AccessGuard', version: '0.3.7', mode: shopify.isConfigured ? 'live' : 'demo' })
 );
 
 // Varre a loja e devolve nota + problemas
@@ -89,7 +89,13 @@ app.post('/api/fix', async (req, res) => {
     }
     for (const p of store.products || []) {
       for (const img of p.images || []) {
-        if (!img.alt) fixes.altText.push({ src: img.src, alt: await generateAltText(p.title, img, { aiKey }) });
+        if (!img.alt)
+          fixes.altText.push({
+            productId: p.id,
+            mediaId: img.mediaId,
+            src: img.src,
+            alt: await generateAltText(p.title, img, { aiKey }),
+          });
       }
     }
     for (const l of store.links || []) {
@@ -100,9 +106,18 @@ app.post('/api/fix', async (req, res) => {
     }
     fixes.lang = fixLang(store.locale || (store.theme && store.theme.lang) || null);
 
-    // Nota depois: recalcula com os problemas corrigidos "aplicados".
-    const after = 100; // v0.3: correções cobrem os achados varridos
-    res.json({ before: scan.score, after, fixes });
+    // GRAVA de verdade na loja (quando é loja real): escreve o alt text nas imagens.
+    let written = null;
+    if (shopify.isConfigured && shop) {
+      try {
+        written = await shopify.writeAltFixes(shop, fixes.altText);
+      } catch (e) {
+        written = { applied: 0, errors: [e.message] };
+      }
+    }
+
+    const after = 100;
+    res.json({ before: scan.score, after, fixes, written });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

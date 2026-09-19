@@ -78,7 +78,8 @@
     document.getElementById('c').textContent='0';document.getElementById('s').textContent='0';document.getElementById('m').textContent='0';
     const b=document.getElementById('banner'); b.className='banner ok'; b.innerHTML='<span>✅</span><b>Your store is compliant. AccessGuard keeps monitoring changes.</b>';
     document.getElementById('issues').innerHTML='';
-    document.getElementById('fixout').innerHTML='<div class="sec">Applied fixes</div><pre>'+JSON.stringify(d.fixes,null,2)+'</pre>';
+    var wrote = d.written ? ('<p style="font-weight:600;color:var(--good)">✅ Gravado na loja: '+d.written.applied+' imagem(ns) com texto alternativo.'+((d.written.errors&&d.written.errors.length)?(' <span style="color:var(--crit)">Erros: '+d.written.errors.join('; ')+'</span>'):'')+'</p>') : '';
+    document.getElementById('fixout').innerHTML='<div class="sec">Applied fixes</div>'+wrote+'<pre>'+JSON.stringify(d.fixes,null,2)+'</pre>';
   }
   scan();
 </script>
