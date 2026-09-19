@@ -146,8 +146,9 @@ async function fetchProducts(session) {
   const query = `{
     products(first: 50) {
       edges { node {
+        id
         title
-        media(first: 20) { edges { node { ... on MediaImage { image { url altText } } } } }
+        media(first: 20) { edges { node { ... on MediaImage { id image { url altText } } } } }
       } }
     }
   }`;
