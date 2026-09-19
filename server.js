@@ -43,19 +43,6 @@ if (shopify.isConfigured) {
   });
 }
 
-// Se a Shopify (ou o lojista) chega na raiz com ?shop e o app ainda NÃO foi
-// instalado nessa loja, começamos a instalação (OAuth). É o que faz o botão
-// "Instalar app" do dashboard completar o aperto de mão.
-if (shopify.isConfigured) {
-  app.get('/', (req, res, next) => {
-    const shop = req.query.shop;
-    if (shop && !shopify.getToken(shop)) {
-      return res.redirect('/auth?shop=' + encodeURIComponent(shop));
-    }
-    next();
-  });
-}
-
 // Arquivos do painel
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -74,7 +61,7 @@ async function loadStoreData(shop) {
 }
 
 app.get('/health', (req, res) =>
-  res.json({ ok: true, app: 'AccessGuard', version: '0.3.4', mode: shopify.isConfigured ? 'live' : 'demo' })
+  res.json({ ok: true, app: 'AccessGuard', version: '0.3.5', mode: shopify.isConfigured ? 'live' : 'demo' })
 );
 
 // Varre a loja e devolve nota + problemas
