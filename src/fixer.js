@@ -62,11 +62,82 @@ function fixLinkText(link) {
   return 'Saiba mais sobre esta página';
 }
 
-// Gera texto alternativo. Versão real chama IA de visão; sem chave, usa fallback descritivo.
+// ---------- IA de visão (descreve a imagem para virar texto alternativo) ----------
+// Suporta OpenAI (GPT) ou Anthropic (Claude). A imagem vai pela URL pública da Shopify.
+function altPrompt(product) {
+  return (
+    'Escreva um texto alternativo (alt text) curto e descritivo, com no máximo 125 caracteres, ' +
+    'para a imagem deste produto de uma loja online. Nome do produto: "' + product + '". ' +
+    'Descreva objetivamente o que aparece na imagem, pensando em quem não pode vê-la. ' +
+    'Não comece com "imagem de" ou "foto de". Responda somente com o texto alternativo, sem aspas.'
+  );
+}
+
+async function altViaOpenAI(key, src, product, model) {
+  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+    body: JSON.stringify({
+      model: model || 'gpt-4o-mini',
+      max_tokens: 120,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: altPrompt(product) },
+            { type: 'image_url', image_url: { url: src } },
+          ],
+        },
+      ],
+    }),
+  });
+  if (!r.ok) throw new Error('OpenAI ' + r.status + ': ' + (await r.text()));
+  const data = await r.json();
+  return data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+}
+
+async function altViaAnthropic(key, src, product, model) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: model || 'claude-3-5-haiku-latest',
+      max_tokens: 120,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: altPrompt(product) },
+            { type: 'image', source: { type: 'url', url: src } },
+          ],
+        },
+      ],
+    }),
+  });
+  if (!r.ok) throw new Error('Anthropic ' + r.status + ': ' + (await r.text()));
+  const data = await r.json();
+  return data && data.content && data.content[0] && data.content[0].text;
+}
+
+// Gera texto alternativo. Com chave de IA, descreve a imagem; sem chave, usa fallback.
 async function generateAltText(product, image, opts = {}) {
-  if (opts.aiKey) {
-    // No deploy: envia a imagem + contexto do produto para a IA de visão e recebe a descrição.
-    // (integração ligada com a chave; omitida aqui de propósito)
+  const key = opts.aiKey;
+  const src = image && image.src;
+  if (key && src) {
+    const provider = (opts.provider || process.env.AI_PROVIDER || 'openai').toLowerCase();
+    const model = opts.model || process.env.AI_MODEL || null;
+    try {
+      const text = provider === 'anthropic'
+        ? await altViaAnthropic(key, src, product, model)
+        : await altViaOpenAI(key, src, product, model);
+      if (text && text.trim()) return text.trim().replace(/^["']+|["']+$/g, '').slice(0, 250);
+    } catch (e) {
+      console.error('IA alt text falhou:', e.message);
+    }
   }
   return `${product} — foto do produto`;
 }
