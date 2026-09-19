@@ -47,15 +47,21 @@ if (shopify.isConfigured) {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Decide de onde vêm os dados da loja para esta requisição.
+// Com um shop no endereço, tenta a loja REAL (token salvo OU client_credentials);
+// se falhar, cai na loja de exemplo para o painel ainda abrir.
 async function loadStoreData(shop) {
-  if (shopify.isConfigured && shop && shopify.getToken(shop)) {
-    return shopify.loadRealStore(shop); // loja REAL
+  if (shopify.isConfigured && shop) {
+    try {
+      return await shopify.loadRealStore(shop);
+    } catch (e) {
+      console.error('Falha ao ler loja real (' + shop + '): ' + e.message);
+    }
   }
   return sampleStore; // demonstração
 }
 
 app.get('/health', (req, res) =>
-  res.json({ ok: true, app: 'AccessGuard', version: '0.3', mode: shopify.isConfigured ? 'live' : 'demo' })
+  res.json({ ok: true, app: 'AccessGuard', version: '0.3.1', mode: shopify.isConfigured ? 'live' : 'demo' })
 );
 
 // Varre a loja e devolve nota + problemas

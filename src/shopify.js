@@ -72,17 +72,43 @@ function knownShops() {
   return Object.keys(readTokens());
 }
 
-// Reconstrói uma "session" a partir do token salvo, para chamar a Admin API.
-function sessionFor(shop) {
+// Token por client_credentials — é assim que um app do Dev Dashboard acessa as
+// PRÓPRIAS lojas (mesma organização). O app troca Client ID + Secret por um
+// token, sem tela de autorização. O token dura ~24h; guardamos em memória.
+const ccCache = new Map(); // shop -> { token, exp }
+async function clientCredentialsToken(shop) {
+  const cached = ccCache.get(shop);
+  if (cached && cached.exp > Date.now() + 60000) return cached.token;
+  const r = await fetch(`https://${shop}/admin/oauth/access_token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ client_id: API_KEY, client_secret: API_SECRET, grant_type: 'client_credentials' }),
+  });
+  if (!r.ok) throw new Error('client_credentials falhou (' + r.status + '): ' + (await r.text()));
+  const data = await r.json();
+  const ttl = data.expires_in ? data.expires_in * 1000 : 23 * 3600 * 1000;
+  ccCache.set(shop, { token: data.access_token, exp: Date.now() + ttl });
+  return data.access_token;
+}
+
+// Descobre o access token da loja: primeiro o salvo (OAuth de lojista externo,
+// via App Store); senão tenta client_credentials (loja própria da organização).
+async function accessTokenFor(shop) {
   const t = getToken(shop);
-  if (!t) return null;
+  if (t && t.accessToken) return t.accessToken;
+  return clientCredentialsToken(shop);
+}
+
+// Monta uma "session" para chamar a Admin API.
+async function sessionFor(shop) {
+  const accessToken = await accessTokenFor(shop);
   return new Session({
     id: `offline_${shop}`,
     shop,
     state: 'offline',
     isOnline: false,
-    accessToken: t.accessToken,
-    scope: t.scope,
+    accessToken,
+    scope: SCOPES.join(','),
   });
 }
 
@@ -177,8 +203,7 @@ async function fetchStorefrontSignals(shop) {
 
 // Monta o objeto da loja no formato que o scanner/fixer esperam.
 async function loadRealStore(shop) {
-  const session = sessionFor(shop);
-  if (!session) throw new Error('Loja não instalada: ' + shop);
+  const session = await sessionFor(shop);
 
   const [products, front] = await Promise.all([
     fetchProducts(session),
