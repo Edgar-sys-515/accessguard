@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy Policy — AllyFix</title>
+<meta name="description" content="How AllyFix collects, uses, and protects data when you use our Shopify accessibility app." />
+<style>
+  :root{--ink:#1a1c20;--soft:#4a515c;--muted:#79808b;--line:#e3e6ea;--brand:#1f6f5c;--brand-bg:#1f6f5c12;--bg:#f6f6f7;--card:#fff}
+  @media (prefers-color-scheme: dark){:root{--ink:#e8eaed;--soft:#b3b9c2;--muted:#8a909b;--line:#2b2f36;--brand:#4fbf9a;--brand-bg:#4fbf9a1a;--bg:#14161a;--card:#1b1e23}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.65}
+  a{color:var(--brand)}
+  .skip{position:absolute;left:-999px}.skip:focus{left:12px;top:12px;background:var(--card);padding:8px 12px;border-radius:8px;z-index:9}
+  .top{background:var(--card);border-bottom:1px solid var(--line);padding:14px 20px;display:flex;align-items:center;gap:10px}
+  .logo{width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800}
+  .brand{font-weight:800;font-size:17px;color:var(--ink);text-decoration:none}
+  .wrap{max-width:760px;margin:0 auto;padding:36px 20px 80px}
+  h1{font-size:30px;margin:0 0 6px}
+  .updated{color:var(--muted);font-size:14px;margin:0 0 28px}
+  h2{font-size:20px;margin:34px 0 10px;padding-top:6px}
+  p{margin:0 0 14px;color:var(--soft)}
+  ul{margin:0 0 14px;padding-left:22px;color:var(--soft)}
+  li{margin:6px 0}
+  .box{background:var(--brand-bg);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:18px 0}
+  .box p{margin:0;color:var(--ink)}
+  strong{color:var(--ink)}
+  footer{border-top:1px solid var(--line);margin-top:40px;padding-top:20px;font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <span class="logo" aria-hidden="true">♿</span>
+  <a class="brand" href="/">AllyFix</a>
+</header>
+<main class="wrap" id="main">
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: September 20, 2026</p>
+
+  <p>This Privacy Policy explains how <strong>AllyFix</strong> (“we”, “us”, “our”) collects, uses, and protects information when you install and use the AllyFix app (the “App”) on your Shopify store. By installing the App, you agree to the practices described here.</p>
+
+  <div class="box">
+    <p><strong>In short:</strong> AllyFix reads your store’s products, images, and public storefront to find and fix accessibility issues. We do <strong>not</strong> collect, store, or sell your customers’ personal data. We are not in the business of advertising or data brokering.</p>
+  </div>
+
+  <h2>1. Information we access</h2>
+  <p>To do its job, the App accesses the following data from your Shopify store through Shopify’s official Admin API, using the permissions you approve at install:</p>
+  <ul>
+    <li><strong>Product and image data</strong> — product titles and product image files, including existing alternative (“alt”) text, so we can detect images missing descriptions and write improved ones back.</li>
+    <li><strong>Theme and storefront content</strong> — publicly available pages of your storefront (page language, link text, form fields) to detect accessibility problems such as missing language declarations, vague links, and unlabeled inputs.</li>
+    <li><strong>Store identifiers</strong> — your store’s myshopify.com domain and installation/session tokens, used only to authenticate the App with your store.</li>
+    <li><strong>Subscription status</strong> — whether your store has an active AllyFix subscription, managed entirely by Shopify Billing.</li>
+  </ul>
+
+  <h2>2. Information we do NOT collect</h2>
+  <p>AllyFix does not access, request, or store your customers’ personal information — no names, emails, addresses, orders, or payment details. The App requests no customer-data permissions. Payment for the subscription is handled by Shopify; we never see or store your card or billing details.</p>
+
+  <h2>3. How we use the information</h2>
+  <ul>
+    <li>To scan your store and calculate an accessibility score.</li>
+    <li>To generate descriptive alternative text for product images and, with your action, write those descriptions back to your store.</li>
+    <li>To authenticate the App and manage your subscription.</li>
+    <li>To operate, maintain, secure, and improve the App.</li>
+  </ul>
+
+  <h2>4. AI processing of images</h2>
+  <p>To generate alternative text, AllyFix sends the URL of a product image to a third-party AI vision provider (currently <strong>OpenAI</strong>) which returns a text description of what the image shows. Only product image URLs are sent for this purpose; no customer personal data is included. These providers act as our subprocessors and process the data solely to return the description to us.</p>
+
+  <h2>5. Sharing and disclosure</h2>
+  <p>We do not sell or rent any data. We share information only with:</p>
+  <ul>
+    <li><strong>Shopify</strong> — as the platform your store and our App run on, and for subscription billing.</li>
+    <li><strong>AI and infrastructure providers</strong> (such as OpenAI and our hosting provider) strictly to operate the App’s features.</li>
+    <li><strong>Legal authorities</strong> — if required by law, subpoena, or to protect our rights and users.</li>
+  </ul>
+
+  <h2>6. Data retention</h2>
+  <p>We keep the minimum data needed to run the App: your store domain, access token, and subscription status, retained while the App is installed. Accessibility scan results are generated on demand and are not retained as permanent records. When you uninstall the App, or upon request, we delete the store credentials associated with your store.</p>
+
+  <h2>7. GDPR / CCPA compliance</h2>
+  <p>AllyFix supports Shopify’s mandatory data-protection webhooks. Because we do not store customer personal data, requests to export or erase customer data (<code>customers/data_request</code>, <code>customers/redact</code>) return no personal data, and store-erasure requests (<code>shop/redact</code>) remove any store credentials we hold. If you are in the EEA, UK, or California, you have the right to access, correct, or delete data we hold about your store; contact us using the details below.</p>
+
+  <h2>8. Data security</h2>
+  <p>The App is served over encrypted HTTPS connections. Access tokens are stored on our server and used only to communicate with your store’s Shopify Admin API. We apply reasonable technical and organizational measures to protect data against unauthorized access.</p>
+
+  <h2>9. Cookies</h2>
+  <p>The embedded App uses only the session mechanisms required by Shopify to load securely inside your Shopify admin. Our marketing website (allyfix.shop) does not use tracking or advertising cookies.</p>
+
+  <h2>10. Changes to this policy</h2>
+  <p>We may update this Privacy Policy from time to time. When we do, we will revise the “Last updated” date above. Material changes will be reflected on this page.</p>
+
+  <h2>11. Contact us</h2>
+  <p>If you have questions about this Privacy Policy or your data, contact us at <a href="mailto:support@allyfix.shop">support@allyfix.shop</a>.</p>
+
+  <footer>
+    © 2026 AllyFix · <a href="/">allyfix.shop</a> · AI accessibility for Shopify stores.
+  </footer>
+</main>
+</body>
+</html>

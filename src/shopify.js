@@ -17,6 +17,7 @@ require('@shopify/shopify-api/adapters/node');
 const { shopifyApi, LATEST_API_VERSION, Session, RequestedTokenType } = require('@shopify/shopify-api');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const API_KEY = process.env.SHOPIFY_API_KEY || '';
 const API_SECRET = process.env.SHOPIFY_API_SECRET || '';
@@ -142,16 +143,6 @@ async function callback(req, res) {
 // Troca o "session token" do App Bridge por um access token da loja, guarda e
 // devolve o domínio da loja. É o jeito moderno, sem redirect de OAuth.
 async function ensureTokenFromSession(sessionToken) {
-  // DEBUG: mostra a "audiência" (app) do token vs a nossa chave, pra diagnosticar.
-  try {
-    const parts = String(sessionToken).split('.');
-    if (parts[1]) {
-      const p = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
-      console.log('[SESSIONTOKEN] aud=' + JSON.stringify(p.aud) + ' dest=' + JSON.stringify(p.dest) + ' iss=' + JSON.stringify(p.iss) + ' | configKey=' + JSON.stringify(API_KEY));
-    }
-  } catch (e) {
-    console.log('[SESSIONTOKEN] não decodificou:', e.message);
-  }
   const payload = await shopify.session.decodeSessionToken(sessionToken); // valida a assinatura
   const shop = String(payload.dest || '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
   if (!shop) throw new Error('session token sem loja (dest)');
@@ -367,6 +358,19 @@ async function createSubscription(shop, returnUrl, plan, sessionToken) {
   return data.confirmationUrl;
 }
 
+// ---------- Webhooks (validação de assinatura HMAC da Shopify) ----------
+// A Shopify assina cada webhook com HMAC-SHA256 sobre o corpo cru, usando o
+// client secret do app. Confirmamos a assinatura antes de responder 200.
+function verifyWebhookHmac(rawBody, hmacHeader) {
+  if (!API_SECRET || !hmacHeader || !rawBody) return false;
+  const digest = crypto.createHmac('sha256', API_SECRET).update(rawBody).digest('base64');
+  try {
+    return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(String(hmacHeader)));
+  } catch (_) {
+    return false;
+  }
+}
+
 module.exports = {
   isConfigured,
   HOST,
@@ -380,5 +384,6 @@ module.exports = {
   writeAltFixes,
   getActiveSubscription,
   createSubscription,
+  verifyWebhookHmac,
   API_KEY,
 };

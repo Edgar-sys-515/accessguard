@@ -18,7 +18,9 @@ const sampleStore = require('./src/sampleStore');
 const shopify = require('./src/shopify');
 
 const app = express();
-app.use(express.json());
+// Guarda o corpo CRU (Buffer) além do JSON — necessário para validar a
+// assinatura HMAC dos webhooks da Shopify (que assina os bytes originais).
+app.use(express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
 // ---------- Instalação na loja (OAuth) ----------
 // O lojista chega em /auth?shop=nome.myshopify.com (a Shopify manda assim).
@@ -101,7 +103,7 @@ async function loadStoreData(shop) {
 }
 
 app.get('/health', (req, res) =>
-  res.json({ ok: true, app: 'AllyFix', version: '0.7.0', mode: shopify.isConfigured ? 'live' : 'demo' })
+  res.json({ ok: true, app: 'AllyFix', version: '0.7.1', mode: shopify.isConfigured ? 'live' : 'demo' })
 );
 
 // Varre a loja e devolve nota + problemas
@@ -218,6 +220,25 @@ app.get('/api/billing/subscribe', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+// ---------- Webhooks obrigatórios de privacidade (GDPR) ----------
+// A Shopify exige que todo app público responda a estes 3 webhooks.
+// O AllyFix NÃO armazena dados pessoais de clientes — só lê produtos/imagens e
+// grava texto alternativo. Então não há dados a exportar nem apagar: validamos
+// a assinatura e respondemos 200 (obrigatório para passar na revisão).
+function shopifyWebhook(req, res) {
+  const hmac = req.get('X-Shopify-Hmac-Sha256');
+  const raw = req.rawBody || Buffer.from(JSON.stringify(req.body || {}), 'utf8');
+  if (!shopify.verifyWebhookHmac(raw, hmac)) {
+    return res.status(401).send('HMAC inválido');
+  }
+  const topic = req.get('X-Shopify-Topic') || 'desconhecido';
+  console.log('[webhook] ' + topic + ' de ' + (req.get('X-Shopify-Shop-Domain') || '?'));
+  return res.status(200).json({ ok: true, topic });
+}
+app.post('/webhooks/customers/data_request', shopifyWebhook);
+app.post('/webhooks/customers/redact', shopifyWebhook);
+app.post('/webhooks/shop/redact', shopifyWebhook);
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
