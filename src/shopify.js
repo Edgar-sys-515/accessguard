@@ -97,28 +97,41 @@ async function clientCredentialsToken(shop) {
   return data.access_token;
 }
 
-// Descobre o access token da loja: primeiro o salvo (OAuth de lojista externo,
-// via App Store); senão tenta client_credentials (loja própria da organização).
-async function accessTokenFor(shop) {
-  // 1) Token do app personalizado (mais simples, pra loja própria)
-  if (STATIC_TOKEN && (!STATIC_SHOP || shop === STATIC_SHOP)) return STATIC_TOKEN;
-  // 2) Token salvo (OAuth de lojista externo, via App Store)
-  const t = getToken(shop);
-  if (t && t.accessToken) return t.accessToken;
-  // 3) client_credentials (loja própria da organização, se o app estiver instalado)
-  return clientCredentialsToken(shop);
+// Sessão com token ONLINE fresco, trocado na hora a partir do session token do
+// App Bridge. Substitui o token offline (que a Shopify descontinuou). Não guarda
+// nada em disco: cada ação pega um token novo, que expira sozinho.
+async function freshOnlineSession(shop, sessionToken) {
+  if (!sessionToken) return null;
+  try {
+    const { session } = await shopify.auth.tokenExchange({
+      shop,
+      sessionToken,
+      requestedTokenType: RequestedTokenType.OnlineAccessToken,
+    });
+    if (session && session.accessToken) return session;
+  } catch (e) {
+    console.error('online token exchange falhou:', e.message);
+  }
+  return null;
 }
 
-// Monta uma "session" para chamar a Admin API.
-async function sessionFor(shop) {
-  const accessToken = await accessTokenFor(shop);
+// Monta a "session" para chamar a Admin API, na ordem de preferência:
+//  1) Loja própria com app personalizado (token shpat_ — não é offline descontinuado);
+//  2) Lojista real: token ONLINE fresco do token exchange (evita token offline);
+//  3) Fallback: client_credentials (loja da própria organização).
+async function sessionFor(shop, sessionToken) {
+  if (STATIC_TOKEN && (!STATIC_SHOP || shop === STATIC_SHOP)) {
+    return new Session({
+      id: `custom_${shop}`, shop, state: 'static', isOnline: false,
+      accessToken: STATIC_TOKEN, scope: SCOPES.join(','),
+    });
+  }
+  const online = await freshOnlineSession(shop, sessionToken);
+  if (online) return online;
+  const accessToken = await clientCredentialsToken(shop);
   return new Session({
-    id: `offline_${shop}`,
-    shop,
-    state: 'offline',
-    isOnline: false,
-    accessToken,
-    scope: SCOPES.join(','),
+    id: `offline_${shop}`, shop, state: 'offline', isOnline: false,
+    accessToken, scope: SCOPES.join(','),
   });
 }
 
@@ -142,17 +155,13 @@ async function callback(req, res) {
 // ---------- Token exchange (app embutido) ----------
 // Troca o "session token" do App Bridge por um access token da loja, guarda e
 // devolve o domínio da loja. É o jeito moderno, sem redirect de OAuth.
-async function ensureTokenFromSession(sessionToken) {
+// Decodifica o session token do App Bridge e devolve o domínio da loja.
+// (Não faz mais token exchange offline — o token de acesso é obtido fresco,
+// online, na hora de usar; ver sessionFor.)
+async function shopFromSessionToken(sessionToken) {
   const payload = await shopify.session.decodeSessionToken(sessionToken); // valida a assinatura
   const shop = String(payload.dest || '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
   if (!shop) throw new Error('session token sem loja (dest)');
-  if (getToken(shop)) return shop; // já temos token salvo desta loja
-  const { session } = await shopify.auth.tokenExchange({
-    shop,
-    sessionToken,
-    requestedTokenType: RequestedTokenType.OfflineAccessToken,
-  });
-  saveToken(shop, session.accessToken, session.scope || SCOPES.join(','));
   return shop;
 }
 
@@ -185,10 +194,10 @@ async function fetchProducts(session) {
 
 // GRAVA o texto alternativo de volta na loja (a correção "de verdade").
 // Precisa do escopo write_products no app.
-async function writeAltFixes(shop, items) {
+async function writeAltFixes(shop, items, sessionToken) {
   const list = (items || []).filter((it) => it && it.productId && it.mediaId);
   if (!list.length) return { applied: 0, errors: [] };
-  const session = await sessionFor(shop);
+  const session = await sessionFor(shop, sessionToken);
   const client = new shopify.clients.Graphql({ session });
   const mutation = `mutation($productId: ID!, $media: [UpdateMediaInput!]!) {
     productUpdateMedia(productId: $productId, media: $media) {
@@ -264,8 +273,8 @@ async function fetchStorefrontSignals(shop) {
 }
 
 // Monta o objeto da loja no formato que o scanner/fixer esperam.
-async function loadRealStore(shop) {
-  const session = await sessionFor(shop);
+async function loadRealStore(shop, sessionToken) {
+  const session = await sessionFor(shop, sessionToken);
 
   const [products, front] = await Promise.all([
     fetchProducts(session),
@@ -301,16 +310,8 @@ function publicSession(shop) {
 // antigo dá 403 em apps públicos desde abr/2026. Se não vier o session token,
 // cai no token salvo.
 async function billingSession(shop, sessionToken) {
-  if (sessionToken) {
-    try {
-      const { session } = await shopify.auth.tokenExchange({
-        shop, sessionToken, requestedTokenType: RequestedTokenType.OnlineAccessToken,
-      });
-      if (session && session.accessToken) return session;
-    } catch (e) {
-      console.error('online token exchange falhou:', e.message);
-    }
-  }
+  const online = await freshOnlineSession(shop, sessionToken);
+  if (online) return online;
   return publicSession(shop);
 }
 
@@ -377,7 +378,7 @@ module.exports = {
   SCOPES,
   begin,
   callback,
-  ensureTokenFromSession,
+  shopFromSessionToken,
   getToken,
   knownShops,
   loadRealStore,

@@ -75,26 +75,30 @@ function bearerToken(req) {
   return m ? m[1] : null;
 }
 
-async function resolveShop(req) {
-  const auth = req.headers.authorization || '';
-  const m = auth.match(/^Bearer (.+)$/i);
-  if (m && shopify.isConfigured) {
+// Devolve { shop, sessionToken } desta requisição. No app embutido, o session
+// token do App Bridge vem no cabeçalho Authorization (dele tiramos a loja e, na
+// hora de usar, um token de acesso fresco). Fora do admin, cai no ?shop=.
+async function resolveContext(req) {
+  const sessionToken = bearerToken(req);
+  if (sessionToken && shopify.isConfigured) {
     try {
-      return await shopify.ensureTokenFromSession(m[1]);
+      const shop = await shopify.shopFromSessionToken(sessionToken);
+      return { shop, sessionToken };
     } catch (e) {
-      console.error('token exchange falhou:', e.message);
+      console.error('session token inválido:', e.message);
     }
   }
-  return req.query.shop || (req.body && req.body.shop) || null;
+  const shop = req.query.shop || (req.body && req.body.shop) || null;
+  return { shop, sessionToken: null };
 }
 
 // Decide de onde vêm os dados da loja para esta requisição.
 // Com um shop, tenta a loja REAL (token salvo / exchange / client_credentials);
 // se falhar, cai na loja de exemplo para o painel ainda abrir.
-async function loadStoreData(shop) {
+async function loadStoreData(shop, sessionToken) {
   if (shopify.isConfigured && shop) {
     try {
-      return await shopify.loadRealStore(shop);
+      return await shopify.loadRealStore(shop, sessionToken);
     } catch (e) {
       console.error('Falha ao ler loja real (' + shop + '): ' + e.message);
     }
@@ -103,14 +107,14 @@ async function loadStoreData(shop) {
 }
 
 app.get('/health', (req, res) =>
-  res.json({ ok: true, app: 'AllyFix', version: '0.7.1', mode: shopify.isConfigured ? 'live' : 'demo' })
+  res.json({ ok: true, app: 'AllyFix', version: '0.8.0', mode: shopify.isConfigured ? 'live' : 'demo' })
 );
 
 // Varre a loja e devolve nota + problemas
 app.get('/api/scan', async (req, res) => {
   try {
-    const shop = await resolveShop(req);
-    const store = await loadStoreData(shop);
+    const { shop, sessionToken } = await resolveContext(req);
+    const store = await loadStoreData(shop, sessionToken);
     res.json(scanStore(store));
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -120,8 +124,8 @@ app.get('/api/scan', async (req, res) => {
 // Aplica as correções e devolve o antes/depois
 app.post('/api/fix', async (req, res) => {
   try {
-    const shop = await resolveShop(req);
-    const store = await loadStoreData(shop);
+    const { shop, sessionToken } = await resolveContext(req);
+    const store = await loadStoreData(shop, sessionToken);
     const scan = scanStore(store);
     const aiKey = process.env.AI_API_KEY || null;
     const fixes = { contrast: [], altText: [], links: [], lang: null };
@@ -153,7 +157,7 @@ app.post('/api/fix', async (req, res) => {
     let written = null;
     if (shopify.isConfigured && shop) {
       try {
-        written = await shopify.writeAltFixes(shop, fixes.altText);
+        written = await shopify.writeAltFixes(shop, fixes.altText, sessionToken);
       } catch (e) {
         written = { applied: 0, errors: [e.message] };
       }
@@ -169,8 +173,8 @@ app.post('/api/fix', async (req, res) => {
 // Diagnóstico: mostra o que o app está lendo da loja (contagens + amostra).
 app.get('/api/debug', async (req, res) => {
   try {
-    const shop = await resolveShop(req);
-    const store = await loadStoreData(shop);
+    const { shop, sessionToken } = await resolveContext(req);
+    const store = await loadStoreData(shop, sessionToken);
     const products = store.products || [];
     res.json({
       shop: store.shop,
@@ -199,9 +203,9 @@ const PLAN = {
 // A loja já tem assinatura ativa?
 app.get('/api/billing/status', async (req, res) => {
   try {
-    const shop = await resolveShop(req);
+    const { shop, sessionToken } = await resolveContext(req);
     if (!shop) return res.json({ active: false, reason: 'no-shop' });
-    const sub = await shopify.getActiveSubscription(shop, bearerToken(req));
+    const sub = await shopify.getActiveSubscription(shop, sessionToken);
     res.json({ active: !!(sub && sub.status === 'ACTIVE'), plan: PLAN.name, price: PLAN.amount, trialDays: PLAN.trialDays });
   } catch (e) {
     res.json({ active: false, error: e.message });
@@ -211,10 +215,10 @@ app.get('/api/billing/status', async (req, res) => {
 // Cria a assinatura e devolve a URL de aprovação da Shopify.
 app.get('/api/billing/subscribe', async (req, res) => {
   try {
-    const shop = await resolveShop(req);
+    const { shop, sessionToken } = await resolveContext(req);
     if (!shop) return res.status(400).json({ error: 'sem loja' });
     const returnUrl = 'https://' + shopify.HOST + '/?shop=' + encodeURIComponent(shop);
-    const confirmationUrl = await shopify.createSubscription(shop, returnUrl, PLAN, bearerToken(req));
+    const confirmationUrl = await shopify.createSubscription(shop, returnUrl, PLAN, sessionToken);
     res.json({ confirmationUrl });
   } catch (e) {
     res.status(500).json({ error: e.message });
