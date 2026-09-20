@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AllyFix — AI Accessibility for Shopify | EAA & WCAG Compliance</title>
+<meta name="description" content="AllyFix scans your Shopify store, fixes accessibility issues with AI, and keeps you compliant with the European Accessibility Act (EAA) and WCAG 2.1 AA. 7-day free trial." />
+<style>
+  :root{
+    --ink:#14201c;--soft:#4b5a54;--muted:#7c8a84;--line:#e4e9e6;
+    --brand:#1f6f5c;--brand-d:#175443;--brand-bg:#1f6f5c14;
+    --bg:#ffffff;--panel:#f6f9f7;--card:#ffffff;
+    --warn:#b9770e;--good:#1e8e5a;--crit:#c0392b;
+    --radius:16px;--maxw:1080px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#eaf1ee;--soft:#b6c3bd;--muted:#8b9a93;--line:#26312d;
+      --brand:#4fd1ac;--brand-d:#8fe6cd;--brand-bg:#4fd1ac1f;
+      --bg:#0e1512;--panel:#121b18;--card:#141d19;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#eaf1ee;--soft:#b6c3bd;--muted:#8b9a93;--line:#26312d;
+    --brand:#4fd1ac;--brand-d:#8fe6cd;--brand-bg:#4fd1ac1f;
+    --bg:#0e1512;--panel:#121b18;--card:#141d19;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6;font-size:17px;-webkit-font-smoothing:antialiased}
+  a{color:var(--brand-d);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+  h1,h2,h3{line-height:1.15;letter-spacing:-.02em;margin:0 0 .4em}
+  h1{font-size:clamp(32px,5vw,54px);font-weight:800}
+  h2{font-size:clamp(26px,3.4vw,38px);font-weight:800}
+  h3{font-size:20px;font-weight:700}
+  p{margin:0 0 1em}
+  .lead{font-size:clamp(17px,2.2vw,21px);color:var(--soft)}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:16px;
+    border-radius:12px;padding:14px 22px;cursor:pointer;border:2px solid transparent;transition:.15s}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.primary:hover{background:var(--brand-d);text-decoration:none}
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+  .btn.ghost:hover{border-color:var(--brand);text-decoration:none}
+  .eyebrow{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--brand-d);background:var(--brand-bg);padding:6px 12px;border-radius:999px}
+
+  /* Header */
+  header.nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;color:var(--ink)}
+  .brand:hover{text-decoration:none}
+  .logo{width:32px;height:32px;border-radius:9px;background:var(--brand);color:#fff;
+    display:grid;place-items:center;font-size:18px}
+  .nav-links{display:flex;align-items:center;gap:22px}
+  .nav-links a{color:var(--soft);font-weight:600;font-size:15px}
+  @media (max-width:760px){ .nav-links a:not(.btn){display:none} }
+
+  /* Hero */
+  .hero{padding:72px 0 40px;background:
+    radial-gradient(1200px 500px at 70% -10%, var(--brand-bg), transparent 60%)}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+  @media (max-width:900px){ .hero-grid{grid-template-columns:1fr;gap:32px} }
+  .hero p.lead{max-width:34ch}
+  .cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+  .trust{margin-top:18px;color:var(--muted);font-size:14px}
+
+  /* Mock dashboard card */
+  .mock{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:0 20px 60px -30px rgba(0,0,0,.35);overflow:hidden}
+  .mock .bar{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .mock .body{padding:20px}
+  .scorewrap{display:flex;gap:16px;align-items:center;margin-bottom:16px}
+  .ring{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;flex:none;
+    background:conic-gradient(var(--good) 0 82%, var(--line) 82% 100%)}
+  .ring b{background:var(--card);width:74px;height:74px;border-radius:50%;display:grid;place-items:center;
+    font-size:26px;font-weight:800}
+  .issue{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);
+    border-radius:11px;margin-bottom:8px;font-size:14.5px;font-weight:600}
+  .tag{margin-left:auto;font-size:11px;background:var(--brand-bg);color:var(--brand-d);padding:3px 9px;border-radius:6px;white-space:nowrap}
+
+  /* Sections */
+  section{padding:64px 0}
+  .center{text-align:center;max-width:640px;margin:0 auto 44px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+  @media (max-width:840px){ .grid3{grid-template-columns:1fr} .grid2{grid-template-columns:1fr} }
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:26px}
+  .ic{width:44px;height:44px;border-radius:11px;background:var(--brand-bg);color:var(--brand-d);
+    display:grid;place-items:center;font-size:22px;margin-bottom:14px}
+  .step{display:flex;gap:16px;align-items:flex-start}
+  .num{flex:none;width:40px;height:40px;border-radius:50%;background:var(--brand);color:#fff;
+    display:grid;place-items:center;font-weight:800}
+
+  .band{background:var(--panel);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+
+  /* Compare */
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  @media (max-width:760px){ .cmp{grid-template-columns:1fr} }
+  .cmp>div{padding:26px}
+  .cmp .bad{background:var(--card)}
+  .cmp .good{background:var(--brand-bg);border-left:1px solid var(--line)}
+  @media (max-width:760px){ .cmp .good{border-left:0;border-top:1px solid var(--line)} }
+  .li{display:flex;gap:10px;margin:10px 0;font-size:15.5px}
+  .li .m{flex:none;font-weight:800}
+  .li .m.x{color:var(--crit)}.li .m.v{color:var(--good)}
+
+  /* Pricing */
+  .price{max-width:440px;margin:0 auto;text-align:center;background:var(--card);
+    border:2px solid var(--brand);border-radius:var(--radius);padding:34px 28px;
+    box-shadow:0 24px 60px -34px rgba(31,111,92,.6)}
+  .price .amt{font-size:52px;font-weight:800;line-height:1}
+  .price .amt span{font-size:18px;color:var(--muted);font-weight:600}
+  .plist{list-style:none;padding:0;margin:20px 0 24px;text-align:left}
+  .plist li{padding:8px 0;display:flex;gap:10px}
+  .plist li::before{content:"✓";color:var(--good);font-weight:800}
+
+  /* FAQ */
+  details{border:1px solid var(--line);border-radius:12px;padding:4px 18px;margin-bottom:12px;background:var(--card)}
+  summary{cursor:pointer;font-weight:700;padding:14px 0;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";float:right;color:var(--brand-d);font-weight:800}
+  details[open] summary::after{content:"–"}
+  details p{color:var(--soft);padding-bottom:6px}
+
+  /* CTA + footer */
+  .final{background:var(--brand);color:#fff;border-radius:var(--radius);padding:52px 30px;text-align:center}
+  .final h2{color:#fff}.final p{color:#e7f4ef}
+  .final .btn.primary{background:#fff;color:var(--brand-d)}
+  .final .btn.primary:hover{background:#eafaf4}
+  footer{padding:40px 0;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+  .foot-in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+  .skip{position:absolute;left:-999px}
+  .skip:focus{left:12px;top:12px;background:var(--brand);color:#fff;padding:10px 14px;border-radius:8px;z-index:50}
+</style>
+</head>
+<body>
+<a href="#main" class="skip">Skip to content</a>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top"><span class="logo" aria-hidden="true">♿</span> AllyFix</a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a class="btn primary" href="#pricing">Start free trial</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<span id="top"></span>
+
+<!-- HERO -->
+<section class="hero" aria-labelledby="h1">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">European Accessibility Act · WCAG 2.1 AA</span>
+      <h1 id="h1">Make your Shopify store accessible — automatically.</h1>
+      <p class="lead">AllyFix scans your store, fixes accessibility issues with AI, and keeps you compliant — so you avoid fines, reach more customers, and never think about it again.</p>
+      <div class="cta-row">
+        <a class="btn primary" href="#pricing">Start 7-day free trial</a>
+        <a class="btn ghost" href="#how">See how it works</a>
+      </div>
+      <p class="trust">Installs in one click · No code · Billed securely through Shopify</p>
+    </div>
+
+    <!-- Mock product dashboard -->
+    <div class="mock" role="img" aria-label="AllyFix dashboard showing an accessibility score of 82 out of 100 with issues the app can fix automatically.">
+      <div class="bar">
+        <span class="dot" style="background:#ff5f57"></span>
+        <span class="dot" style="background:#febc2e"></span>
+        <span class="dot" style="background:#28c840"></span>
+        <strong style="margin-left:8px;font-size:13px;color:var(--muted)">AllyFix · Accessibility Dashboard</strong>
+      </div>
+      <div class="body">
+        <div class="scorewrap">
+          <div class="ring"><b>82</b></div>
+          <div>
+            <strong style="font-size:15px">Your store is at risk</strong>
+            <p style="margin:.2em 0 0;color:var(--soft);font-size:14px">Fix the issues below to comply with the EAA.</p>
+          </div>
+        </div>
+        <div class="issue"><span class="dot" style="background:var(--warn)"></span> 6 product images missing alt text <span class="tag">AI-fixable</span></div>
+        <div class="issue"><span class="dot" style="background:var(--warn)"></span> 3 low-contrast text elements <span class="tag">AI-fixable</span></div>
+        <div class="issue"><span class="dot" style="background:#2c6cb0"></span> 2 unclear link labels <span class="tag">AI-fixable</span></div>
+        <div style="margin-top:14px"><span class="btn primary" aria-hidden="true">✨ Fix all with AI</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- URGENCY / PROBLEM -->
+<section class="band" aria-labelledby="why">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow">Why now</span>
+      <h2 id="why">Accessibility is now the law — and most stores aren't ready.</h2>
+      <p class="lead">The <strong>European Accessibility Act</strong> requires online stores serving EU customers to be accessible. Non-compliance can mean fines and legal complaints — and studies find the vast majority of e-commerce sites still fail basic checks.</p>
+    </div>
+    <div class="grid3">
+      <div class="card">
+        <div class="ic" aria-hidden="true">⚖️</div>
+        <h3>Real legal risk</h3>
+        <p>Accessibility complaints and fines are rising worldwide. A non-compliant storefront is an open liability.</p>
+      </div>
+      <div class="card">
+        <div class="ic" aria-hidden="true">🛒</div>
+        <h3>Lost sales</h3>
+        <p>Over 1 billion people live with a disability. An inaccessible store quietly turns away paying customers every day.</p>
+      </div>
+      <div class="card">
+        <div class="ic" aria-hidden="true">⏳</div>
+        <h3>Too complex by hand</h3>
+        <p>Alt text, contrast, labels, semantics — auditing and fixing it all manually takes expertise and hours you don't have.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" aria-labelledby="howh">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow">How it works</span>
+      <h2 id="howh">Compliant in minutes, not months.</h2>
+    </div>
+    <div class="grid3">
+      <div class="card step">
+        <div class="num" aria-hidden="true">1</div>
+        <div><h3>Scan</h3><p>AllyFix reads your real products and pages and gives you a clear accessibility score against WCAG 2.1 AA.</p></div>
+      </div>
+      <div class="card step">
+        <div class="num" aria-hidden="true">2</div>
+        <div><h3>Fix with AI</h3><p>One click. Our AI writes accurate image descriptions, corrects color contrast, and clears up vague links — then writes the fixes back to your store.</p></div>
+      </div>
+      <div class="card step">
+        <div class="num" aria-hidden="true">3</div>
+        <div><h3>Stay compliant</h3><p>AllyFix keeps monitoring your store, so new products and changes stay accessible automatically.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="band" aria-labelledby="feath">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow">What it fixes</span>
+      <h2 id="feath">Everything that matters, handled.</h2>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="ic" aria-hidden="true">🖼️</div><h3>AI image descriptions</h3><p>Vision AI looks at each product photo and writes a genuine, descriptive alt text — not a generic placeholder.</p></div>
+      <div class="card"><div class="ic" aria-hidden="true">🎨</div><h3>Color contrast</h3><p>Detects text that fails WCAG contrast and calculates a compliant color that keeps your design intact.</p></div>
+      <div class="card"><div class="ic" aria-hidden="true">🔗</div><h3>Clear links & labels</h3><p>Replaces vague "click here" links and flags form fields missing labels — key wins for screen-reader users.</p></div>
+      <div class="card"><div class="ic" aria-hidden="true">📊</div><h3>Live compliance score</h3><p>A single, honest 0–100 score you can show your team — and watch climb as issues get fixed.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- DIFFERENTIATION -->
+<section aria-labelledby="cmph">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow">The difference</span>
+      <h2 id="cmph">It fixes your store — not a risky overlay.</h2>
+      <p class="lead">Accessibility "overlay" widgets bolt a script onto your site and have been widely criticized and even sued over. AllyFix fixes the actual content of your store.</p>
+    </div>
+    <div class="cmp">
+      <div class="bad">
+        <h3>Overlay widgets</h3>
+        <div class="li"><span class="m x" aria-hidden="true">✕</span> A script layered on top — the underlying store stays broken</div>
+        <div class="li"><span class="m x" aria-hidden="true">✕</span> Publicly criticized by accessibility experts</div>
+        <div class="li"><span class="m x" aria-hidden="true">✕</span> Has drawn lawsuits and regulator action</div>
+        <div class="li"><span class="m x" aria-hidden="true">✕</span> You never really own the fix</div>
+      </div>
+      <div class="good">
+        <h3>AllyFix</h3>
+        <div class="li"><span class="m v" aria-hidden="true">✓</span> Fixes the real content in your Shopify store</div>
+        <div class="li"><span class="m v" aria-hidden="true">✓</span> Follows WCAG 2.1 AA, the recognized standard</div>
+        <div class="li"><span class="m v" aria-hidden="true">✓</span> AI does the heavy lifting — you stay in control</div>
+        <div class="li"><span class="m v" aria-hidden="true">✓</span> Real, lasting improvements you keep</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="band" aria-labelledby="priceh">
+  <div class="wrap">
+    <div class="center">
+      <span class="eyebrow">Pricing</span>
+      <h2 id="priceh">One simple plan.</h2>
+      <p class="lead">Start free. Cancel anytime. Billed securely through Shopify.</p>
+    </div>
+    <div class="price">
+      <div class="amt">$39<span> / month</span></div>
+      <p style="color:var(--muted);margin:.4em 0 0">after a 7-day free trial</p>
+      <ul class="plist">
+        <li>Full store accessibility scan</li>
+        <li>AI image descriptions &amp; contrast fixes</li>
+        <li>Continuous monitoring</li>
+        <li>Live WCAG / EAA compliance score</li>
+        <li>Unlimited products</li>
+      </ul>
+      <a class="btn primary" href="#" style="width:100%;justify-content:center" aria-label="Start your 7-day free trial on the Shopify App Store">Start 7-day free trial</a>
+      <p style="color:var(--muted);font-size:13px;margin:14px 0 0">No credit card entered here — billing is handled by Shopify.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section aria-labelledby="faqh">
+  <div class="wrap" style="max-width:760px">
+    <div class="center">
+      <span class="eyebrow">FAQ</span>
+      <h2 id="faqh">Questions, answered.</h2>
+    </div>
+    <details>
+      <summary>What is the European Accessibility Act (EAA)?</summary>
+      <p>It's EU legislation requiring many digital services — including online stores serving EU customers — to meet accessibility standards. AllyFix helps you align with the WCAG 2.1 AA guidelines it's based on.</p>
+    </details>
+    <details>
+      <summary>Do I need to know how to code?</summary>
+      <p>No. AllyFix installs from the Shopify App Store in one click and runs inside your Shopify admin. Fixes are applied for you.</p>
+    </details>
+    <details>
+      <summary>Will it change how my store looks?</summary>
+      <p>Fixes are designed to preserve your design. For example, contrast corrections find the closest compliant color, and image descriptions are added invisibly for screen readers.</p>
+    </details>
+    <details>
+      <summary>How does the AI write image descriptions?</summary>
+      <p>Vision AI actually looks at each product image and describes what's in it — so the alt text is accurate and useful, not a generic label.</p>
+    </details>
+    <details>
+      <summary>How am I billed?</summary>
+      <p>Through Shopify's secure billing, right on your Shopify invoice. Start with a 7-day free trial and cancel anytime.</p>
+    </details>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section aria-labelledby="ctah">
+  <div class="wrap">
+    <div class="final">
+      <h2 id="ctah">Make your store accessible today.</h2>
+      <p class="lead" style="max-width:46ch;margin:0 auto 22px">Join merchants getting compliant with the EAA — and reaching every customer.</p>
+      <a class="btn primary" href="#pricing">Start 7-day free trial</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot-in">
+    <div class="brand"><span class="logo" aria-hidden="true">♿</span> AllyFix</div>
+    <nav aria-label="Footer">
+      <a href="#how" style="margin-right:16px">How it works</a>
+      <a href="#pricing" style="margin-right:16px">Pricing</a>
+      <a href="#" >Privacy</a>
+    </nav>
+    <div>© 2026 AllyFix. Accessibility for Shopify.</div>
+  </div>
+</footer>
+</body>
+</html>

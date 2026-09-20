@@ -1,6 +1,6 @@
 'use strict';
 /*
- * AccessGuard — camada Shopify (instalação + leitura da loja de verdade).
+ * AllyFix — camada Shopify (instalação + leitura da loja de verdade).
  *
  * O que este arquivo faz:
  *  1) Configura o SDK oficial da Shopify (@shopify/shopify-api).
@@ -229,7 +229,7 @@ async function fetchStorefrontSignals(shop) {
   const out = { lang: null, links: [], formFields: [] };
   try {
     const r = await fetch(`https://${shop}/`, {
-      headers: { 'User-Agent': 'AccessGuard/0.3 (+accessibility scan)' },
+      headers: { 'User-Agent': 'AllyFix/0.3 (+accessibility scan)' },
       redirect: 'follow',
     });
     const html = await r.text();

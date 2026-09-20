@@ -1,4 +1,4 @@
-# Como colocar o AccessGuard no ar (passo a passo)
+# Como colocar o AllyFix no ar (passo a passo)
 
 Guia feito sob medida para o seu cenário:
 
@@ -7,7 +7,7 @@ Guia feito sob medida para o seu cenário:
 - Domínio **discar.cloud** — vamos usar o subdomínio **accessguard.discar.cloud**
   (esse endereço é só técnico, o lojista não vê; quem instala o app é a Shopify)
 
-A ideia: rodar o AccessGuard como **mais um contêiner Docker**, ouvindo só no
+A ideia: rodar o AllyFix como **mais um contêiner Docker**, ouvindo só no
 localhost da VPS, e deixar o seu **reverse proxy** publicar ele na internet com
 HTTPS no endereço `accessguard.discar.cloud`.
 
@@ -92,7 +92,7 @@ Isso constrói a imagem e sobe o app. Ele fica ouvindo em `127.0.0.1:3011`
 curl http://127.0.0.1:3011/health
 ```
 
-Deve responder algo como `{"ok":true,"app":"AccessGuard","version":"0.3","mode":"live"}`.
+Deve responder algo como `{"ok":true,"app":"AllyFix","version":"0.3","mode":"live"}`.
 
 > `mode:"live"` = leu as chaves da Shopify. Se aparecer `mode:"demo"`, faltou
 > preencher alguma variável no `.env` — revise o Passo 3 e rode

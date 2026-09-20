@@ -1,4 +1,4 @@
-# AccessGuard
+# AllyFix
 
 App de acessibilidade com IA para lojas **Shopify** — varre a loja, encontra problemas
 de acessibilidade (WCAG 2.1 AA / European Accessibility Act) e **corrige** com IA.

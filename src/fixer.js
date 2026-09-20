@@ -1,6 +1,6 @@
 'use strict';
 /*
- * AccessGuard — corretor (a parte que CONSERTA os problemas).
+ * AllyFix — corretor (a parte que CONSERTA os problemas).
  * - Contraste de cor: cálculo puro (sem IA) — encontra a cor que passa no WCAG.
  * - Idioma da página: define o atributo.
  * - Texto de link vago: reescreve a partir do destino.

@@ -1,6 +1,6 @@
 'use strict';
 /*
- * AccessGuard — motor de acessibilidade (núcleo do app)
+ * AllyFix — motor de acessibilidade (núcleo do app)
  * Verifica uma loja contra critérios do WCAG 2.1 AA / EAA.
  * Este módulo é "puro": recebe os dados da loja e devolve os problemas.
  * Depois ele é ligado à API da Shopify (para ler a loja de verdade) e à IA (para corrigir).

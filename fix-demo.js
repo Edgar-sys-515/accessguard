@@ -7,7 +7,7 @@ const store = require('./src/sampleStore');
 (async () => {
   const before = scanStore(store);
   console.log('\n==================================================');
-  console.log('  AccessGuard — Correção automática');
+  console.log('  AllyFix — Correção automática');
   console.log('==================================================\n');
   console.log('  Nota ANTES: ' + before.score + '/100\n');
 

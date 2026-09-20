@@ -8,7 +8,7 @@ const dot = { critical: '🔴', serious: '🟠', moderate: '🔵' };
 const result = scanStore(store);
 
 console.log('\n==================================================');
-console.log('  AccessGuard — Relatório de Acessibilidade');
+console.log('  AllyFix — Relatório de Acessibilidade');
 console.log('  Loja: ' + store.shop);
 console.log('==================================================\n');
 console.log('  NOTA: ' + result.score + '/100');

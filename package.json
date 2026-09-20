@@ -1,8 +1,8 @@
 {
-  "name": "accessguard",
+  "name": "allyfix",
   "version": "0.3.0",
   "private": true,
-  "description": "AccessGuard — AI accessibility app for Shopify stores (EAA / WCAG 2.1 AA).",
+  "description": "AllyFix — AI accessibility app for Shopify stores (EAA / WCAG 2.1 AA).",
   "engines": {
     "node": ">=20"
   },

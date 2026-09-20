@@ -1,4 +1,4 @@
-# AccessGuard — imagem do app
+# AllyFix — imagem do app
 FROM node:20-slim
 
 # Diretório de trabalho dentro do contêiner

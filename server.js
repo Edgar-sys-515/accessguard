@@ -1,6 +1,6 @@
 'use strict';
 /*
- * AccessGuard — servidor do app.
+ * AllyFix — servidor do app.
  * Serve o painel do lojista, instala o app na loja (OAuth) e expõe os
  * endpoints que varrem e corrigem a loja usando o motor (scanner + fixer).
  *
@@ -101,7 +101,7 @@ async function loadStoreData(shop) {
 }
 
 app.get('/health', (req, res) =>
-  res.json({ ok: true, app: 'AccessGuard', version: '0.6.3', mode: shopify.isConfigured ? 'live' : 'demo' })
+  res.json({ ok: true, app: 'AllyFix', version: '0.7.0', mode: shopify.isConfigured ? 'live' : 'demo' })
 );
 
 // Varre a loja e devolve nota + problemas
@@ -187,7 +187,7 @@ app.get('/api/debug', async (req, res) => {
 
 // ---------- Cobrança (Shopify Billing) ----------
 const PLAN = {
-  name: process.env.PLAN_NAME || 'AccessGuard Pro',
+  name: process.env.PLAN_NAME || 'AllyFix Pro',
   amount: process.env.PLAN_PRICE || '39.00',
   currency: process.env.PLAN_CURRENCY || 'USD',
   trialDays: parseInt(process.env.PLAN_TRIAL_DAYS || '7', 10),
@@ -222,7 +222,7 @@ app.get('/api/billing/subscribe', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
   app.listen(PORT, () =>
-    console.log('AccessGuard rodando na porta ' + PORT + ' (modo ' + (shopify.isConfigured ? 'live' : 'demo') + ')')
+    console.log('AllyFix rodando na porta ' + PORT + ' (modo ' + (shopify.isConfigured ? 'live' : 'demo') + ')')
   );
 }
 module.exports = app;

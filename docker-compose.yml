@@ -1,4 +1,4 @@
-# AccessGuard — sobe o app como um contêiner ao lado dos seus outros apps.
+# AllyFix — sobe o app como um contêiner ao lado dos seus outros apps.
 #
 # Como usar na VPS:
 #   1) tenha o arquivo .env preenchido (veja .env.example)

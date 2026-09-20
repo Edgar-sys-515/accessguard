@@ -4,7 +4,7 @@
 __APP_BRIDGE__
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>AccessGuard</title>
+<title>AllyFix</title>
 <style>
   :root{--ink:#1a1c20;--soft:#5c6470;--muted:#8a909b;--line:#e3e6ea;--brand:#1f6f5c;--brand-bg:#1f6f5c14;
     --crit:#c0392b;--ser:#b9770e;--mod:#2c6cb0;--good:#1e8e5a;--bg:#f6f6f7;--card:#fff}
@@ -33,7 +33,7 @@ __APP_BRIDGE__
 </style>
 </head>
 <body>
-  <div class="top"><div class="logo">♿</div><b>AccessGuard</b></div>
+  <div class="top"><div class="logo">♿</div><b>AllyFix</b></div>
   <div class="wrap">
     <h1>Accessibility Dashboard</h1>
     <p class="lead" id="storeline">WCAG 2.1 AA / EAA</p>
@@ -82,7 +82,7 @@ __APP_BRIDGE__
     const b = document.getElementById('banner');
     if (!d.issues || d.issues.length === 0) {
       b.className = 'banner ok';
-      b.innerHTML = '<span>✅</span><b>Your store is compliant. AccessGuard keeps monitoring changes.</b>';
+      b.innerHTML = '<span>✅</span><b>Your store is compliant. AllyFix keeps monitoring changes.</b>';
     } else {
       b.className = 'banner risk';
       b.innerHTML = '<span>⚠️</span><b>Your store is at risk — fix the issues below to comply with the EAA.</b>';
@@ -98,9 +98,9 @@ __APP_BRIDGE__
     const r = await apiFetch('/api/fix' + q,{method:'POST'}); const d = await r.json();
     document.getElementById('score').textContent = d.after;
     document.getElementById('c').textContent='0';document.getElementById('s').textContent='0';document.getElementById('m').textContent='0';
-    const b=document.getElementById('banner'); b.className='banner ok'; b.innerHTML='<span>✅</span><b>Your store is compliant. AccessGuard keeps monitoring changes.</b>';
+    const b=document.getElementById('banner'); b.className='banner ok'; b.innerHTML='<span>✅</span><b>Your store is compliant. AllyFix keeps monitoring changes.</b>';
     document.getElementById('issues').innerHTML='';
-    var wrote = d.written ? ('<p style="font-weight:600;color:var(--good)">✅ Gravado na loja: '+d.written.applied+' imagem(ns) com texto alternativo.'+((d.written.errors&&d.written.errors.length)?(' <span style="color:var(--crit)">Erros: '+d.written.errors.join('; ')+'</span>'):'')+'</p>') : '';
+    var wrote = d.written ? ('<p style="font-weight:600;color:var(--good)">✅ Saved to your store: '+d.written.applied+' image(s) got alt text.'+((d.written.errors&&d.written.errors.length)?(' <span style="color:var(--crit)">Errors: '+d.written.errors.join('; ')+'</span>'):'')+'</p>') : '';
     document.getElementById('fixout').innerHTML='<div class="sec">Applied fixes</div>'+wrote+'<pre>'+JSON.stringify(d.fixes,null,2)+'</pre>';
   }
   // ----- Cobrança (Shopify Billing) -----
@@ -111,18 +111,18 @@ __APP_BRIDGE__
       const el = document.getElementById('billing');
       if(d && d.active){ el.style.display='none'; return; }
       el.style.display='block';
-      el.innerHTML = '<div class="bill"><div><b>✨ Ative o AccessGuard</b>'
-        + '<div class="billsub">' + (d.trialDays||7) + ' dias grátis, depois $' + (d.price||'39') + '/mês · cobrado pela Shopify</div></div>'
-        + '<button class="primary" onclick="subscribe(this)">Começar teste grátis</button></div>';
+      el.innerHTML = '<div class="bill"><div><b>✨ Activate AllyFix</b>'
+        + '<div class="billsub">' + (d.trialDays||7) + ' days free, then $' + (d.price||'39') + '/mo · billed by Shopify</div></div>'
+        + '<button class="primary" onclick="subscribe(this)">Start free trial</button></div>';
     }catch(e){/* silencioso */}
   }
   async function subscribe(btn){
-    if(btn){ btn.disabled=true; btn.textContent='Abrindo…'; }
+    if(btn){ btn.disabled=true; btn.textContent='Opening…'; }
     try{
       const r = await apiFetch('/api/billing/subscribe' + q); const d = await r.json();
       if(d && d.confirmationUrl){ (window.top||window).location.href = d.confirmationUrl; }
-      else { alert('Não foi possível iniciar a assinatura: ' + (d && d.error ? d.error : 'erro')); if(btn){btn.disabled=false;btn.textContent='Começar teste grátis';} }
-    }catch(e){ alert('Erro: ' + e.message); if(btn){btn.disabled=false;btn.textContent='Começar teste grátis';} }
+      else { alert('Could not start the subscription: ' + (d && d.error ? d.error : 'error')); if(btn){btn.disabled=false;btn.textContent='Start free trial';} }
+    }catch(e){ alert('Error: ' + e.message); if(btn){btn.disabled=false;btn.textContent='Start free trial';} }
   }
   scan();
   checkBilling();
